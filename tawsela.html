@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تطبيق الحجز المسبق</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f4f3ef;
+      --surface:   #ffffff;
+      --border:    rgba(0,0,0,0.10);
+      --border-md: rgba(0,0,0,0.18);
+      --text:      #16150f;
+      --muted:     #6b6a65;
+      --hint:      #9b9a96;
+      --accent:    #1D9E75;
+      --accent-h:  #0F6E56;
+      --success:   #2e7d32;
+      --success-bg:#e8f5e9;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --danger:    #D85A30;
+      --danger-h:  #993C1D;
+    }
+
+    html, body { height: 100%; }
+    body { font-family: 'Cairo', sans-serif; background: var(--bg); min-height: 100vh; }
+
+    /* ════ AUTH LAYER ════ */
+    #auth-layer {
+      min-height: 100vh; display: flex; align-items: center;
+      justify-content: center; padding: 1.5rem; position: relative;
+    }
+    #auth-layer::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: radial-gradient(circle, rgba(29,158,117,0.07) 1px, transparent 1px);
+      background-size: 28px 28px; pointer-events: none; z-index: 0;
+    }
+    .auth-card {
+      position: relative; z-index: 1; background: var(--surface);
+      border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+      padding: 2rem 2.5rem; width: 100%; max-width: 440px;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.07); animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .auth-logo {
+      width: 48px; height: 48px; background: var(--accent); border-radius: 13px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;
+    }
+    .auth-logo i { color: #fff; font-size: 24px; }
+    .auth-app-name { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .auth-app-sub  { font-size: 13px; color: var(--muted); margin-bottom: 1.75rem; }
+
+    .role-select { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 1.5rem; }
+    .role-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 8px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
+      background: var(--surface); cursor: pointer; font-family: 'Cairo', sans-serif;
+      font-size: 12px; font-weight: 500; color: var(--muted); transition: all .18s;
+    }
+    .role-btn i { font-size: 22px; }
+    .role-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .role-btn.selected { border-color: var(--accent); background: #E1F5EE; color: var(--accent-h); font-weight: 600; }
+
+    .tabs {
+      display: flex; gap: 4px; background: #f4f3ef; border-radius: var(--radius-md);
+      padding: 4px; margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      flex: 1; padding: 8px; border: none; background: none; cursor: pointer;
+      font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 500;
+      color: var(--muted); border-radius: 7px; transition: all 0.18s;
+    }
+    .tab-btn.active {
+      background: var(--surface); color: var(--text);
+      border: 0.5px solid var(--border-md); font-weight: 600;
+    }
+
+    .auth-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .auth-sub   { font-size: 13px; color: var(--muted); margin-bottom: 1.75rem; line-height: 1.6; }
+
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+    .phone-wrap { display: flex; gap: 8px; }
+    .phone-prefix {
+      display: flex; align-items: center; padding: 10px 12px;
+      background: #f4f3ef; border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); font-size: 14px; font-weight: 500;
+      color: var(--muted); white-space: nowrap; direction: ltr;
+    }
+
+    input[type="text"], input[type="password"], input[type="tel"], input[type="date"] {
+      width: 100%; padding: 10px 14px; font-family: 'Cairo', sans-serif;
+      font-size: 14px; background: var(--surface); border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); color: var(--text); outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus, input[type="password"]:focus, input[type="tel"]:focus, input[type="date"]:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+    }
+    input::placeholder { color: var(--hint); }
+    .phone-wrap input { direction: ltr; text-align: left; }
+
+    .submit-btn {
+      width: 100%; padding: 11px; background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-md); font-family: 'Cairo', sans-serif;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, transform 0.1s; margin-top: 0.25rem;
+    }
+    .submit-btn:hover:not(:disabled)  { background: var(--accent-h); }
+    .submit-btn:active:not(:disabled) { transform: scale(0.99); }
+    .submit-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+    .switch-row { text-align: center; margin-top: 1.25rem; font-size: 13px; color: var(--muted); }
+    .switch-row button {
+      background: none; border: none; cursor: pointer; font-family: 'Cairo', sans-serif;
+      font-size: 13px; font-weight: 700; color: var(--accent); padding: 0; margin-right: 4px;
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
+      cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 13px; color: var(--muted);
+      margin-bottom: 1rem; padding: 0; transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    .otp-hint { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; line-height: 1.7; }
+    .otp-hint strong { color: var(--text); }
+    .otp-inputs { display: flex; gap: 8px; justify-content: center; direction: ltr; margin-bottom: 1rem; }
+    .otp-single {
+      width: 50px !important; height: 54px; text-align: center;
+      font-size: 22px; font-weight: 700; font-family: 'Cairo', sans-serif;
+      border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
+      background: var(--surface); color: var(--text); outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s; padding: 0;
+    }
+    .otp-single:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,158,117,0.12); }
+    .otp-single.filled { border-color: var(--accent); }
+
+    .resend-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+    .resend-timer { font-size: 13px; color: var(--muted); }
+    .resend-btn {
+      font-size: 13px; font-family: 'Cairo', sans-serif; color: var(--accent);
+      background: none; border: none; cursor: pointer; font-weight: 600;
+      opacity: 0.4; pointer-events: none; transition: opacity 0.2s;
+    }
+    .resend-btn.active { opacity: 1; pointer-events: all; }
+
+    .success-wrap { text-align: center; padding: 1rem 0 0.5rem; }
+    .success-icon {
+      width: 60px; height: 60px; background: var(--success-bg);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+    .success-icon i { font-size: 28px; color: var(--success); }
+    .success-wrap h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .success-wrap p  { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.6; }
+
+    .auth-screen { animation: fadeIn 0.22s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Zone Selector (Customer Signup) ── */
+    .zone-section { margin-bottom: 1rem; }
+    .zone-section label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+    .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .zone-btn {
+      padding: 10px 8px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
+      background: var(--surface); cursor: pointer; font-family: 'Cairo', sans-serif;
+      font-size: 12px; font-weight: 500; color: var(--muted); transition: all .18s;
+      text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .zone-btn i { font-size: 16px; }
+    .zone-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .zone-btn.selected { border-color: var(--accent); background: #E1F5EE; color: var(--accent-h); font-weight: 600; }
+
+    /* ── Captain Verification Screen ── */
+    #auth-captain-verify { display: none; }
+    .upload-field { margin-bottom: 1rem; }
+    .upload-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .upload-box {
+      border: 1.5px dashed var(--border-md); border-radius: var(--radius-md);
+      padding: 16px; text-align: center; cursor: pointer;
+      transition: all .18s; background: #f9fafb; position: relative;
+    }
+    .upload-box:hover { border-color: var(--accent); background: #f0faf6; }
+    .upload-box input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-box i { font-size: 24px; color: var(--hint); display: block; margin-bottom: 4px; }
+    .upload-box .upload-text { font-size: 12px; color: var(--muted); }
+    .upload-box.uploaded { border-color: var(--accent); background: #E1F5EE; }
+    .upload-box.uploaded i { color: var(--accent); }
+    .upload-box.uploaded .upload-text { color: var(--accent-h); font-weight: 600; }
+
+    .pending-screen { text-align: center; padding: 1rem 0; }
+    .pending-icon {
+      width: 60px; height: 60px; background: #FAEEDA; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;
+    }
+    .pending-icon i { font-size: 28px; color: #854F0B; }
+
+    @media (max-width: 480px) {
+      .auth-card { padding: 1.5rem 1.25rem; }
+      .otp-single { width: 42px !important; height: 46px; font-size: 18px; }
+    }
+
+    /* ════ APP LAYER ════ */
+    #app-layer { display: none; min-height: 100vh; background: var(--bg); }
+
+    .app-header {
+      background: var(--surface); border-bottom: 0.5px solid var(--border);
+      padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .app-header-logo { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--text); }
+    .app-header-logo span { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+    .app-header-logo span i { color: white; font-size: 16px; }
+    .app-user-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+    .app-user-info .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #E1F5EE; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--accent-h); }
+    .role-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .role-badge.customer { background: #E6F1FB; color: #185FA5; }
+    .role-badge.captain  { background: #E1F5EE; color: #0F6E56; }
+    .role-badge.admin    { background: #FAEEDA; color: #854F0B; }
+
+    .logout-btn {
+      background: none; border: 0.5px solid var(--border-md); border-radius: 8px; padding: 5px 10px;
+      font-family: 'Cairo', sans-serif; font-size: 12px; color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; gap: 4px; transition: all .15s;
+    }
+    .logout-btn:hover { background: #fef2f2; border-color: #f87171; color: #b91c1c; }
+
+    .main-tab-bar { display: flex; gap: 0; border-bottom: 0.5px solid var(--border); background: var(--surface); padding: 0 1rem; overflow-x: auto; }
+    .main-tab {
+      padding: 12px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
+      border-bottom: 2px solid transparent; color: var(--muted); transition: all .2s;
+      white-space: nowrap; display: flex; align-items: center; gap: 5px;
+    }
+    .main-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .main-tab:hover:not(.active) { color: var(--text); background: #f9fafb; }
+
+    .main-screen { display: none; padding: 1rem; max-width: 680px; margin: 0 auto; }
+    .main-screen.active { display: block; }
+
+    .card { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 1rem 1.25rem; margin-bottom: 12px; }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .card-title i { font-size: 17px; color: var(--accent); }
+
+    /* ── Zone badge on customer screen ── */
+    .zone-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #E1F5EE; border: 0.5px solid var(--accent);
+      border-radius: 20px; padding: 4px 12px; font-size: 12px;
+      font-weight: 600; color: var(--accent-h); margin-bottom: 12px;
+    }
+    .zone-pill i { font-size: 14px; }
+
+    /* ── Zone destinations list ── */
+    .dest-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+    .dest-item {
+      padding: 10px 12px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
+      background: #f9fafb; font-size: 13px; cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .dest-item:hover  { border-color: var(--accent); color: var(--accent); background: #f0faf6; }
+    .dest-item.active { border-color: var(--accent); background: #E1F5EE; color: var(--accent-h); font-weight: 600; }
+    .dest-item i { font-size: 14px; color: var(--accent); }
+
+    #leaflet-map { height: 220px; border-radius: var(--radius-md); border: 0.5px solid #a5d6a7; z-index: 1; }
+    .map-status { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+    .map-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .map-dot.from { background: var(--accent); }
+    .map-dot.to   { background: var(--danger); }
+
+    .field-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .field-label { font-size: 13px; color: var(--muted); min-width: 70px; }
+    .field-input {
+      flex: 1; background: #f9fafb; border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); padding: 8px 10px; font-size: 13px;
+      font-family: 'Cairo', sans-serif; color: var(--text); outline: none; direction: rtl;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(29,158,117,.12); }
+
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 20px; border-radius: var(--radius-md); font-size: 14px; font-weight: 600;
+      font-family: 'Cairo', sans-serif; cursor: pointer; border: none; transition: all .15s;
+      width: 100%; margin-top: 4px;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-h); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-outline { background: transparent; border: 0.5px solid var(--border-md); color: var(--text); }
+    .btn-outline:hover { background: #f9fafb; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; margin-top: 0; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: var(--danger-h); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #1b5e20; }
+
+    .time-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; }
+    .time-slot {
+      padding: 8px 4px; border-radius: var(--radius-md); font-size: 12px; text-align: center;
+      cursor: pointer; border: 0.5px solid var(--border); background: #f9fafb;
+      color: var(--muted); transition: all .15s; font-family: 'Cairo', sans-serif;
+    }
+    .time-slot:hover { border-color: var(--accent); color: var(--accent); }
+    .time-slot.selected { background: #E1F5EE; border-color: var(--accent); color: var(--accent-h); font-weight: 600; }
+
+    .passengers { display: flex; align-items: center; gap: 12px; }
+    .pass-btn {
+      width: 34px; height: 34px; border-radius: 50%; border: 0.5px solid var(--border-md);
+      background: #f9fafb; font-size: 20px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; color: var(--text); transition: all .15s;
+    }
+    .pass-btn:hover { background: #E1F5EE; border-color: var(--accent); }
+    .pass-count { font-size: 22px; font-weight: 600; min-width: 32px; text-align: center; }
+
+    .booking-confirm {
+      background: #E1F5EE; border: 0.5px solid #5DCAA5;
+      border-radius: var(--radius-lg); padding: 1rem; margin-top: 8px; display: none;
+    }
+    .booking-confirm.show { display: block; }
+    .confirm-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+    .confirm-label { color: var(--muted); }
+    .confirm-val { font-weight: 600; color: var(--accent-h); }
+
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .s-new      { background: #E6F1FB; color: #185FA5; }
+    .s-accepted { background: #EAF3DE; color: #3B6D11; }
+    .s-done     { background: #f1f0eb; color: #5F5E5A; }
+    .s-pending  { background: #FAEEDA; color: #854F0B; }
+    .s-online   { background: #E1F5EE; color: #0F6E56; }
+    .s-busy     { background: #E6F1FB; color: #185FA5; }
+    .s-rejected { background: #fde8e8; color: #b91c1c; }
+
+    .trip-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 1rem; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .trip-route { font-size: 13px; font-weight: 600; }
+    .trip-meta  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .stat-box { background: #f9fafb; border-radius: var(--radius-md); padding: 12px; text-align: center; border: 0.5px solid var(--border); }
+    .stat-num { font-size: 22px; font-weight: 700; }
+    .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .c-green { color: var(--accent); }
+    .c-blue  { color: #185FA5; }
+    .c-amber { color: #BA7517; }
+    .c-red   { color: #b91c1c; }
+
+    .captain-trip {
+      background: var(--surface); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 1rem; margin-bottom: 10px;
+    }
+    .captain-trip-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .route-display { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
+    .route-display i { color: var(--accent); }
+    .trip-details-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .trip-detail { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+    .trip-detail i { font-size: 14px; }
+
+    .online-toggle {
+      display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #f9fafb;
+      border-radius: var(--radius-md); margin-bottom: 12px; cursor: pointer;
+      border: 0.5px solid var(--border); transition: border-color .2s;
+    }
+    .online-toggle:hover { border-color: var(--accent); }
+    .toggle-switch {
+      width: 44px; height: 24px; border-radius: 12px; background: #ccc;
+      position: relative; transition: background .2s; margin-right: auto; flex-shrink: 0;
+    }
+    .toggle-switch.on { background: var(--accent); }
+    .toggle-knob {
+      width: 18px; height: 18px; border-radius: 50%; background: white;
+      position: absolute; top: 3px; right: 3px;
+      transition: right .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .toggle-switch.on .toggle-knob { right: 23px; }
+    .toggle-label { font-size: 13px; font-weight: 600; }
+
+    .notification {
+      background: #FAEEDA; border: 0.5px solid #FAC775; border-radius: var(--radius-md);
+      padding: 10px 12px; font-size: 13px; color: #854F0B;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px; animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+    .section-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; color: var(--text); }
+    .section-title i { font-size: 17px; color: var(--accent); }
+
+    .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+
+    #booking-toast {
+      display: none; text-align: center; padding: 12px 16px; margin-top: 8px;
+      color: var(--accent-h); font-size: 14px; font-weight: 600;
+      background: #E1F5EE; border-radius: var(--radius-md); border: 0.5px solid #5DCAA5;
+    }
+
+    /* ── Admin captain review cards ── */
+    .captain-review-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 1rem; margin-bottom: 10px;
+    }
+    .captain-review-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .captain-review-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .captain-review-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .captain-review-docs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 10px; }
+    .doc-thumb {
+      background: #f4f3ef; border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
+      padding: 8px; text-align: center; font-size: 11px; color: var(--muted);
+    }
+    .doc-thumb i { font-size: 20px; color: var(--accent); display: block; margin-bottom: 3px; }
+    .captain-review-actions { display: flex; gap: 8px; }
+
+    .leaflet-container { font-family: 'Cairo', sans-serif; }
+    .leaflet-popup-content { font-family: 'Cairo', sans-serif; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════ AUTH LAYER ══════════════════════ -->
+<div id="auth-layer">
+  <div class="auth-card">
+    <div class="auth-logo"><i class="ti ti-car"></i></div>
+    <div class="auth-app-name">تطبيق الحجز المسبق</div>
+    <div class="auth-app-sub">رحلتك في الموعد دايماً</div>
+
+    <!-- MAIN FORM -->
+    <div id="auth-main" class="auth-screen">
+      <div style="font-size:13px; font-weight:600; color:var(--muted); margin-bottom:8px;">اختار نوع الحساب</div>
+      <div class="role-select">
+        <button class="role-btn selected" id="role-customer" onclick="selectRole('customer')">
+          <i class="ti ti-user"></i> عميل
+        </button>
+        <button class="role-btn" id="role-captain" onclick="selectRole('captain')">
+          <i class="ti ti-steering-wheel"></i> كابتن
+        </button>
+        <button class="role-btn" id="role-admin" onclick="selectRole('admin')">
+          <i class="ti ti-shield"></i> أدمن
+        </button>
+      </div>
+
+      <div class="tabs" id="tabs-row">
+        <button class="tab-btn active" id="tab-login"  onclick="switchAuthTab('login')">تسجيل دخول</button>
+        <button class="tab-btn"        id="tab-signup" onclick="switchAuthTab('signup')">إنشاء حساب</button>
+      </div>
+
+      <!-- Login fields -->
+      <div id="login-fields">
+        <p class="auth-title" id="login-title">أهلاً بك</p>
+        <p class="auth-sub"   id="login-sub">سجّل دخولك للمتابعة</p>
+        <div class="field" id="phone-field">
+          <label>رقم الموبايل</label>
+          <div class="phone-wrap">
+            <div class="phone-prefix">🇪🇬 +20</div>
+            <input type="tel" id="login-phone" placeholder="01X XXXX XXXX" maxlength="11" oninput="checkLoginReady()" />
+          </div>
+        </div>
+        <div class="field">
+          <label id="pass-label">كلمة المرور</label>
+          <input type="password" id="login-pass" placeholder="••••••••" oninput="checkLoginReady()" />
+        </div>
+        <button class="submit-btn" id="login-btn" disabled onclick="doLogin()">دخول</button>
+        <div class="switch-row" id="signup-switch-row">
+          ليس لديك حساب؟ <button onclick="switchAuthTab('signup')">أنشئ حساباً الآن</button>
+        </div>
+      </div>
+
+      <!-- Signup fields -->
+      <div id="signup-fields" style="display:none">
+        <p class="auth-title">إنشاء حساب جديد</p>
+        <p class="auth-sub" id="signup-sub">أدخل بياناتك للتسجيل</p>
+        <div class="field">
+          <label>الاسم الكامل</label>
+          <input type="text" id="signup-name" placeholder="محمد أحمد" oninput="checkSignupReady()" />
+        </div>
+        <div class="field">
+          <label>رقم الموبايل</label>
+          <div class="phone-wrap">
+            <div class="phone-prefix">🇪🇬 +20</div>
+            <input type="tel" id="signup-phone" placeholder="01X XXXX XXXX" maxlength="11" oninput="checkSignupReady()" />
+          </div>
+        </div>
+        <div class="field">
+          <label>كلمة المرور</label>
+          <input type="password" id="signup-pass" placeholder="••••••••" oninput="checkSignupReady()" />
+        </div>
+
+        <!-- Zone selector (customer only) -->
+        <div class="zone-section" id="zone-section">
+          <label>📍 اختار المنطقة اللي هتطلب منها</label>
+          <div class="zone-grid" id="zone-grid">
+            <button class="zone-btn" data-zone="zayed" onclick="selectZone(this, 'zayed')">
+              <i class="ti ti-building-community"></i> الشيخ زايد
+            </button>
+            <button class="zone-btn" data-zone="october" onclick="selectZone(this, 'october')">
+              <i class="ti ti-map-pin"></i> مدينة أكتوبر
+            </button>
+          </div>
+        </div>
+
+        <button class="submit-btn" id="signup-btn" disabled onclick="doSignup()">إرسال كود التأكيد</button>
+        <div class="switch-row">
+          لديك حساب؟ <button onclick="switchAuthTab('login')">سجّل دخولك</button>
+        </div>
+      </div>
+    </div><!-- /auth-main -->
+
+    <!-- OTP SCREEN -->
+    <div id="auth-otp" style="display:none" class="auth-screen">
+      <button class="back-btn" onclick="goBackAuth()"><i class="ti ti-arrow-right"></i> رجوع</button>
+      <p class="auth-title">تأكيد رقم الموبايل</p>
+      <p class="otp-hint">أدخل الكود المكوّن من 6 أرقام الذي تم إرساله إلى <strong id="otp-phone-display"></strong></p>
+      <div class="otp-inputs">
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+      </div>
+      <div class="resend-row">
+        <span class="resend-timer" id="resend-timer">إعادة الإرسال بعد <strong id="countdown">60</strong>ث</span>
+        <button class="resend-btn" id="resend-btn" onclick="resendOtp()">إعادة إرسال الكود</button>
+      </div>
+      <button class="submit-btn" id="otp-btn" disabled onclick="verifyOtp()">تحقق من الكود</button>
+    </div>
+
+    <!-- CAPTAIN VERIFICATION SCREEN -->
+    <div id="auth-captain-verify" class="auth-screen">
+      <p class="auth-title">🪪 توثيق حساب الكابتن</p>
+      <p class="auth-sub">ارفع الصور المطلوبة عشان نوافق على حسابك</p>
+
+      <div class="upload-field">
+        <label>صورة بطاقة الهوية</label>
+        <div class="upload-box" id="box-id">
+          <input type="file" accept="image/*" onchange="markUploaded('box-id', 'doc-id', this)" />
+          <i class="ti ti-id"></i>
+          <div class="upload-text">اضغط لرفع الصورة</div>
+        </div>
+      </div>
+
+      <div class="upload-field">
+        <label>صورة العربية</label>
+        <div class="upload-box" id="box-car">
+          <input type="file" accept="image/*" onchange="markUploaded('box-car', 'doc-car', this)" />
+          <i class="ti ti-car"></i>
+          <div class="upload-text">اضغط لرفع الصورة</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>رقم اللوحة</label>
+        <input type="text" id="plate-number" placeholder="مثال: أ ب ج 1234" oninput="checkVerifyReady()" />
+      </div>
+
+      <div class="upload-field">
+        <label>صورة رخصة السواقة</label>
+        <div class="upload-box" id="box-dlicense">
+          <input type="file" accept="image/*" onchange="markUploaded('box-dlicense', 'doc-dlicense', this)" />
+          <i class="ti ti-license"></i>
+          <div class="upload-text">اضغط لرفع الصورة</div>
+        </div>
+      </div>
+
+      <div class="upload-field">
+        <label>صورة رخصة العربية</label>
+        <div class="upload-box" id="box-clicense">
+          <input type="file" accept="image/*" onchange="markUploaded('box-clicense', 'doc-clicense', this)" />
+          <i class="ti ti-file-certificate"></i>
+          <div class="upload-text">اضغط لرفع الصورة</div>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="verify-btn" disabled onclick="submitCaptainVerify()">إرسال للمراجعة</button>
+    </div>
+
+    <!-- PENDING SCREEN (captain waiting approval) -->
+    <div id="auth-pending" style="display:none" class="auth-screen">
+      <div class="pending-screen">
+        <div class="pending-icon"><i class="ti ti-clock-pause"></i></div>
+        <h3 style="font-size:17px; font-weight:700; color:var(--text); margin-bottom:8px;">قيد الانتظار</h3>
+        <p style="font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:1.5rem;">
+          تم إرسال بياناتك للأدمن للمراجعة.<br/>
+          هيتم التواصل معاك بعد الموافقة.
+        </p>
+        <button class="submit-btn" onclick="doLogout()" style="background:#6b6a65;">رجوع لتسجيل الدخول</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div id="auth-success" style="display:none" class="auth-screen">
+      <div class="success-wrap">
+        <div class="success-icon"><i class="ti ti-check"></i></div>
+        <h3 id="success-title">تم التحقق بنجاح!</h3>
+        <p id="success-sub">مرحباً بك، يمكنك الآن الدخول إلى حسابك</p>
+        <button class="submit-btn" onclick="enterApp()">الدخول إلى التطبيق ←</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /auth-layer -->
+
+
+<!-- ══════════════════════ APP LAYER ══════════════════════ -->
+<div id="app-layer">
+
+  <div class="app-header">
+    <div class="app-header-logo">
+      <span><i class="ti ti-car"></i></span>
+      حجز المشاوير
+    </div>
+    <div class="app-user-info">
+      <div class="user-avatar" id="header-avatar">م</div>
+      <div>
+        <div style="font-size:13px; font-weight:600; color:var(--text);" id="header-name">المستخدم</div>
+        <div class="role-badge customer" id="header-role-badge">عميل</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()"><i class="ti ti-logout" style="font-size:14px;"></i> خروج</button>
+    </div>
+  </div>
+
+  <div class="main-tab-bar" id="main-tab-bar">
+    <div class="main-tab active" id="mtab-customer" onclick="switchMainTab('customer')"><i class="ti ti-user"></i> العميل</div>
+    <div class="main-tab" id="mtab-captain" onclick="switchMainTab('captain')"><i class="ti ti-steering-wheel"></i> الكابتن</div>
+    <div class="main-tab" id="mtab-admin" onclick="switchMainTab('admin')"><i class="ti ti-layout-dashboard"></i> الأدمن</div>
+  </div>
+
+  <!-- ── CUSTOMER SCREEN ── -->
+  <div id="mscreen-customer" class="main-screen active">
+
+    <!-- Zone + destinations -->
+    <div class="card" id="zone-dest-card">
+      <div class="card-title"><i class="ti ti-map-pin"></i> منطقتك والوجهة</div>
+      <div class="zone-pill" id="customer-zone-pill"><i class="ti ti-map-pin"></i> <span id="zone-pill-text">غير محددة</span></div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:8px;">اختار وجهتك:</div>
+      <div class="dest-list" id="dest-list">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-map-2"></i> حدد الرحلة على الخريطة</div>
+      <div id="leaflet-map"></div>
+      <div class="map-status" id="map-status">
+        <span class="map-dot from"></span> من: <span id="ms-from">لم يتم التحديد</span>
+        &nbsp;&nbsp;
+        <span class="map-dot to"></span> إلى: <span id="ms-to">لم يتم التحديد</span>
+      </div>
+      <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+        <i class="ti ti-info-circle" style="font-size:13px;"></i>
+        اضغط مرة لتحديد نقطة الانطلاق، مرة ثانية للوجهة
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-route"></i> تفاصيل الرحلة</div>
+      <div class="field-row">
+        <div class="field-label">من</div>
+        <input class="field-input" type="text" id="from-input" placeholder="مثال: الحي الثالث، زايد" />
+      </div>
+      <div class="field-row">
+        <div class="field-label">إلى</div>
+        <input class="field-input" type="text" id="to-input" placeholder="سيتم تحديده من القائمة" readonly />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-clock"></i> موعد المشوار</div>
+      <div class="field-row">
+        <div class="field-label">التاريخ</div>
+        <input class="field-input" type="date" id="trip-date" />
+      </div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:6px;">اختار الوقت</div>
+      <div class="time-slots">
+        <div class="time-slot" onclick="selectTime(this,'6 ص')">6:00 ص</div>
+        <div class="time-slot" onclick="selectTime(this,'8 ص')">8:00 ص</div>
+        <div class="time-slot" onclick="selectTime(this,'10 ص')">10:00 ص</div>
+        <div class="time-slot" onclick="selectTime(this,'12 ظ')">12:00 ظ</div>
+        <div class="time-slot" onclick="selectTime(this,'2 م')">2:00 م</div>
+        <div class="time-slot" onclick="selectTime(this,'4 م')">4:00 م</div>
+        <div class="time-slot" onclick="selectTime(this,'6 م')">6:00 م</div>
+        <div class="time-slot selected" onclick="selectTime(this,'8 م')">8:00 م</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-users"></i> عدد الأشخاص</div>
+      <div class="passengers">
+        <button class="pass-btn" onclick="changePass(-1)">−</button>
+        <div class="pass-count" id="pass-count">2</div>
+        <button class="pass-btn" onclick="changePass(1)">+</button>
+        <div style="font-size:13px; color:var(--muted); margin-right:4px;">شخص</div>
+      </div>
+    </div>
+
+    <div id="booking-confirm-box" class="booking-confirm">
+      <div style="font-size:13px; font-weight:600; color:var(--accent-h); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <i class="ti ti-check-circle"></i> ملخص الحجز
+      </div>
+      <div class="confirm-row"><span class="confirm-label">من</span><span class="confirm-val" id="conf-from">-</span></div>
+      <div class="confirm-row"><span class="confirm-label">إلى</span><span class="confirm-val" id="conf-to">-</span></div>
+      <div class="confirm-row"><span class="confirm-label">الموعد</span><span class="confirm-val" id="conf-time">-</span></div>
+      <div class="confirm-row"><span class="confirm-label">الأشخاص</span><span class="confirm-val" id="conf-pass">-</span></div>
+      <div class="confirm-row" style="border-top:0.5px solid #5DCAA5; margin-top:6px; padding-top:8px;">
+        <span class="confirm-label">السعر التقريبي</span>
+        <span class="confirm-val" id="conf-price">-</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="confirmBooking()">
+      <i class="ti ti-calendar-check"></i> تأكيد الحجز المسبق
+    </button>
+    <div id="booking-toast">
+      <i class="ti ti-circle-check"></i> تم إرسال الحجز بنجاح! سيتواصل معك الكابتن قريباً
+    </div>
+  </div>
+
+  <!-- ── CAPTAIN SCREEN ── -->
+  <div id="mscreen-captain" class="main-screen">
+
+    <div class="online-toggle" onclick="toggleOnline()">
+      <i class="ti ti-car" style="font-size:22px; color:var(--accent);"></i>
+      <div>
+        <div class="toggle-label" id="online-label">أنت أوفلاين</div>
+        <div style="font-size:11px; color:var(--muted);">اضغط لتغيير الحالة</div>
+      </div>
+      <div class="toggle-switch" id="online-toggle-sw">
+        <div class="toggle-knob"></div>
+      </div>
+    </div>
+
+    <div id="new-trip-notif" class="notification" style="display:none;">
+      <i class="ti ti-bell-ringing" style="font-size:18px; flex-shrink:0;"></i>
+      <div style="flex:1;">
+        <div style="font-weight:600;">طلب رحلة جديد!</div>
+        <div style="font-size:11px; margin-top:2px;" id="notif-details">من المعادي إلى مدينة نصر • 8:00 م • 3 أشخاص</div>
+      </div>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <button class="btn btn-primary btn-sm" onclick="acceptTrip()">قبول</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('new-trip-notif').style.display='none'">رفض</button>
+      </div>
+    </div>
+
+    <div class="section-title"><i class="ti ti-list-check"></i> رحلاتي اليوم</div>
+
+    <div class="captain-trip" id="active-trip" style="display:none; border-color:#5DCAA5;">
+      <div class="captain-trip-header">
+        <div class="route-display"><i class="ti ti-route"></i> <span id="active-route">المعادي → مدينة نصر</span></div>
+        <span class="status-badge s-accepted">مقبولة</span>
+      </div>
+      <div class="trip-details-row">
+        <div class="trip-detail"><i class="ti ti-clock"></i> <span id="active-time">8:00 م</span></div>
+        <div class="trip-detail"><i class="ti ti-users"></i> <span id="active-pass">3 أشخاص</span></div>
+        <div class="trip-detail"><i class="ti ti-cash"></i> <span id="active-price">~85 جنيه</span></div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="completeTrip()"><i class="ti ti-check"></i> إنهاء الرحلة</button>
+        <button class="btn btn-outline btn-sm"><i class="ti ti-phone"></i> اتصال</button>
+      </div>
+    </div>
+
+    <div class="captain-trip">
+      <div class="captain-trip-header">
+        <div class="route-display"><i class="ti ti-route"></i> الهرم → وسط البلد</div>
+        <span class="status-badge s-done">منتهية</span>
+      </div>
+      <div class="trip-details-row">
+        <div class="trip-detail"><i class="ti ti-clock"></i> 2:00 م</div>
+        <div class="trip-detail"><i class="ti ti-users"></i> 1 شخص</div>
+        <div class="trip-detail"><i class="ti ti-cash"></i> 60 جنيه</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-top:4px;">
+      <div class="stat-box"><div class="stat-num c-green" id="capt-trips">1</div><div class="stat-lbl">رحلات اليوم</div></div>
+      <div class="stat-box"><div class="stat-num c-amber" id="capt-earn">60</div><div class="stat-lbl">الأرباح (جنيه)</div></div>
+      <div class="stat-box"><div class="stat-num c-blue">4.9</div><div class="stat-lbl">التقييم</div></div>
+    </div>
+  </div>
+
+  <!-- ── ADMIN SCREEN ── -->
+  <div id="mscreen-admin" class="main-screen">
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num c-green" id="admin-bookings">7</div><div class="stat-lbl">حجز اليوم</div></div>
+      <div class="stat-box"><div class="stat-num c-blue">3</div><div class="stat-lbl">كابتن أونلاين</div></div>
+      <div class="stat-box"><div class="stat-num c-amber" id="pending-captains-count">2</div><div class="stat-lbl">كابتن قيد المراجعة</div></div>
+    </div>
+
+    <!-- Captain verification requests -->
+    <div class="section-title"><i class="ti ti-user-check"></i> طلبات توثيق الكباتن</div>
+    <div id="captain-verify-list">
+      <!-- demo entries -->
+      <div class="captain-review-card" id="capt-req-demo1">
+        <div class="captain-review-header">
+          <div>
+            <div class="captain-review-name">خالد عبدالعزيز</div>
+            <div class="captain-review-meta">📱 01012345678 • رقم اللوحة: أ ب ج 1234</div>
+          </div>
+          <span class="status-badge s-pending">قيد المراجعة</span>
+        </div>
+        <div class="captain-review-docs">
+          <div class="doc-thumb"><i class="ti ti-id"></i>بطاقة الهوية</div>
+          <div class="doc-thumb"><i class="ti ti-car"></i>صورة العربية</div>
+          <div class="doc-thumb"><i class="ti ti-license"></i>رخصة السواقة</div>
+          <div class="doc-thumb"><i class="ti ti-file-certificate"></i>رخصة العربية</div>
+        </div>
+        <div class="captain-review-actions">
+          <button class="btn btn-success btn-sm" style="flex:1;" onclick="approveCapt('capt-req-demo1')"><i class="ti ti-check"></i> موافقة</button>
+          <button class="btn btn-danger btn-sm" style="flex:1;" onclick="rejectCapt('capt-req-demo1')"><i class="ti ti-x"></i> رفض</button>
+        </div>
+      </div>
+      <div class="captain-review-card" id="capt-req-demo2">
+        <div class="captain-review-header">
+          <div>
+            <div class="captain-review-name">ياسر إبراهيم</div>
+            <div class="captain-review-meta">📱 01098765432 • رقم اللوحة: د هـ و 5678</div>
+          </div>
+          <span class="status-badge s-pending">قيد المراجعة</span>
+        </div>
+        <div class="captain-review-docs">
+          <div class="doc-thumb"><i class="ti ti-id"></i>بطاقة الهوية</div>
+          <div class="doc-thumb"><i class="ti ti-car"></i>صورة العربية</div>
+          <div class="doc-thumb"><i class="ti ti-license"></i>رخصة السواقة</div>
+          <div class="doc-thumb"><i class="ti ti-file-certificate"></i>رخصة العربية</div>
+        </div>
+        <div class="captain-review-actions">
+          <button class="btn btn-success btn-sm" style="flex:1;" onclick="approveCapt('capt-req-demo2')"><i class="ti ti-check"></i> موافقة</button>
+          <button class="btn btn-danger btn-sm" style="flex:1;" onclick="rejectCapt('capt-req-demo2')"><i class="ti ti-x"></i> رفض</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bookings -->
+    <div class="section-title" style="margin-top:8px;"><i class="ti ti-calendar-event"></i> الحجوزات المسبقة</div>
+    <div id="admin-trips">
+      <div class="trip-card">
+        <div style="flex:1;">
+          <div class="trip-route">الشيخ زايد → التجمع الخامس</div>
+          <div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> اليوم 8:00 م • 3 أشخاص • أحمد محمد</div>
+        </div>
+        <span class="status-badge s-new">جديد</span>
+      </div>
+      <div class="trip-card">
+        <div style="flex:1;">
+          <div class="trip-route">أكتوبر → مطار القاهرة</div>
+          <div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> غداً 6:00 ص • 2 شخص • سارة علي</div>
+        </div>
+        <span class="status-badge s-pending">معلق</span>
+      </div>
+      <div class="trip-card">
+        <div style="flex:1;">
+          <div class="trip-route">زايد → مدينة نصر</div>
+          <div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> اليوم 4:00 م • 1 شخص • محمود حسن</div>
+        </div>
+        <span class="status-badge s-accepted">مقبول</span>
+      </div>
+      <div class="trip-card">
+        <div style="flex:1;">
+          <div class="trip-route">أكتوبر → وسط البلد</div>
+          <div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> اليوم 2:00 م • 4 أشخاص • فاطمة كريم</div>
+        </div>
+        <span class="status-badge s-done">منتهي</span>
+      </div>
+    </div>
+
+    <div class="section-title"><i class="ti ti-users"></i> الكباتن المتاحين</div>
+    <div class="trip-card">
+      <div class="avatar" style="background:#E1F5EE; color:#0F6E56;">مح</div>
+      <div style="flex:1;">
+        <div class="trip-route">محمد سيد</div>
+        <div class="trip-meta">تويوتا كامري • أبيض • ⭐ 4.8</div>
+      </div>
+      <span class="status-badge s-online">متاح</span>
+    </div>
+    <div class="trip-card">
+      <div class="avatar" style="background:#E6F1FB; color:#185FA5;">عم</div>
+      <div style="flex:1;">
+        <div class="trip-route">عمر خالد</div>
+        <div class="trip-meta">هيونداي إلنترا • أسود • ⭐ 4.9</div>
+      </div>
+      <span class="status-badge s-busy">في رحلة</span>
+    </div>
+  </div>
+
+</div><!-- /app-layer -->
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+
+<script>
+/* ══════════════════════════════════
+   ZONE DATA
+══════════════════════════════════ */
+const ZONES = {
+  zayed: {
+    label: 'الشيخ زايد',
+    destinations: [
+      { name: 'مدينة نصر', icon: 'ti-building' },
+      { name: 'المهندسين',  icon: 'ti-building-skyscraper' },
+      { name: 'الدقي',      icon: 'ti-map-pin' },
+      { name: 'وسط البلد',  icon: 'ti-building-arch' },
+      { name: 'التجمع الخامس', icon: 'ti-building-community' },
+      { name: 'مطار القاهرة', icon: 'ti-plane' },
+      { name: 'الجيزة',    icon: 'ti-pyramid' },
+      { name: 'الهرم',     icon: 'ti-pyramid' },
+    ]
+  },
+  october: {
+    label: 'مدينة أكتوبر',
+    destinations: [
+      { name: 'مدينة نصر',  icon: 'ti-building' },
+      { name: 'وسط البلد',  icon: 'ti-building-arch' },
+      { name: 'مطار القاهرة', icon: 'ti-plane' },
+      { name: 'العجوزة',   icon: 'ti-map-pin' },
+      { name: 'الدقي',     icon: 'ti-map-pin' },
+      { name: 'إمبابة',    icon: 'ti-map-pin' },
+      { name: 'الشيخ زايد', icon: 'ti-building-community' },
+      { name: 'المهندسين', icon: 'ti-building-skyscraper' },
+    ]
+  }
+};
+
+/* ══════════════════════════════════
+   AUTH STATE
+══════════════════════════════════ */
+const ADMIN_PASSWORD = '12345678910';
+
+const registeredUsers = {};
+// pending captain verifications
+const pendingCaptains = {};
+// captain doc uploads tracker (in-memory)
+const captainDocs = { 'box-id': false, 'box-car': false, 'box-dlicense': false, 'box-clicense': false };
+
+let authTab       = 'login';
+let selectedRole  = 'customer';
+let selectedZone  = '';   // for customer signup
+let currentPhone  = '';
+let timerInterval = null;
+let loggedInUser  = { name: 'المستخدم', role: 'customer', zone: '' };
+
+/* ── Role selector ── */
+function selectRole(role) {
+  selectedRole = role;
+  ['customer','captain','admin'].forEach(r => {
+    document.getElementById('role-' + r).classList.toggle('selected', r === role);
+  });
+
+  const isAdmin = role === 'admin';
+  document.getElementById('tabs-row').style.display       = isAdmin ? 'none' : 'flex';
+  document.getElementById('login-fields').style.display   = 'block';
+  document.getElementById('signup-fields').style.display  = 'none';
+
+  // Show zone selector only for customer
+  document.getElementById('zone-section').style.display = role === 'customer' ? 'block' : 'none';
+
+  if (isAdmin) {
+    document.getElementById('login-title').textContent  = 'دخول الأدمن';
+    document.getElementById('login-sub').textContent    = 'أدخل كلمة المرور الخاصة بالأدمن';
+    document.getElementById('phone-field').style.display = 'none';
+    document.getElementById('pass-label').textContent   = 'كلمة مرور الأدمن';
+    document.getElementById('login-pass').placeholder   = 'أدخل كلمة المرور';
+    document.getElementById('login-btn').textContent    = 'دخول كأدمن';
+  } else {
+    document.getElementById('login-title').textContent  = 'أهلاً بك';
+    document.getElementById('login-sub').textContent    = 'سجّل دخولك للمتابعة';
+    document.getElementById('phone-field').style.display = 'flex';
+    document.getElementById('pass-label').textContent   = 'كلمة المرور';
+    document.getElementById('login-pass').placeholder   = '••••••••';
+    document.getElementById('login-btn').textContent    = 'دخول';
+  }
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-phone').value = '';
+  checkLoginReady();
+}
+
+/* ── Zone selector (customer signup) ── */
+function selectZone(el, zone) {
+  selectedZone = zone;
+  document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  checkSignupReady();
+}
+
+/* ── Auth tabs ── */
+function switchAuthTab(tab) {
+  authTab = tab;
+  document.getElementById('tab-login').classList.toggle('active',  tab === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('login-fields').style.display  = tab === 'login'  ? 'block' : 'none';
+  document.getElementById('signup-fields').style.display = tab === 'signup' ? 'block' : 'none';
+}
+
+/* ── Validation ── */
+function checkLoginReady() {
+  if (selectedRole === 'admin') {
+    const pass = document.getElementById('login-pass').value.trim();
+    document.getElementById('login-btn').disabled = pass.length < 4;
+    return;
+  }
+  const phone = document.getElementById('login-phone').value.trim();
+  const pass  = document.getElementById('login-pass').value.trim();
+  document.getElementById('login-btn').disabled = !(phone.length >= 10 && pass.length >= 4);
+}
+
+function checkSignupReady() {
+  const name  = document.getElementById('signup-name').value.trim();
+  const phone = document.getElementById('signup-phone').value.trim();
+  const pass  = document.getElementById('signup-pass').value.trim();
+  const zoneOk = selectedRole === 'captain' ? true : selectedZone !== '';
+  document.getElementById('signup-btn').disabled = !(name.length >= 2 && phone.length >= 10 && pass.length >= 4 && zoneOk);
+}
+
+/* ── Login ── */
+function doLogin() {
+  if (selectedRole === 'admin') {
+    const pass = document.getElementById('login-pass').value.trim();
+    if (pass !== ADMIN_PASSWORD) { showFieldError('login-pass', 'كلمة المرور غير صحيحة!'); return; }
+    loggedInUser = { name: 'الأدمن', role: 'admin' };
+    showSuccessScreen('تم تسجيل دخول الأدمن!', 'مرحباً بك في لوحة التحكم');
+    return;
+  }
+
+  const phone = document.getElementById('login-phone').value.trim();
+  const pass  = document.getElementById('login-pass').value.trim();
+  const fullPhone = '+20' + phone;
+  const stored = registeredUsers[fullPhone];
+
+  if (!stored) { showFieldError('login-phone', 'الرقم غير مسجل، أنشئ حساباً أولاً'); return; }
+  if (stored.pass !== pass) { showFieldError('login-pass', 'كلمة المرور غير صحيحة!'); return; }
+  if (stored.role !== selectedRole) {
+    showFieldError('login-phone', 'هذا الحساب مسجل كـ ' + roleArabic(stored.role) + ' وليس ' + roleArabic(selectedRole));
+    return;
+  }
+  // Captain: check approval status
+  if (stored.role === 'captain' && stored.status === 'pending') {
+    showPendingScreen();
+    return;
+  }
+  if (stored.role === 'captain' && stored.status === 'rejected') {
+    showFieldError('login-phone', 'تم رفض طلب التوثيق من الأدمن');
+    return;
+  }
+
+  currentPhone = fullPhone;
+  loggedInUser = { name: stored.name, role: stored.role, zone: stored.zone || '' };
+  showOtpScreen();
+}
+
+/* ── Signup ── */
+function doSignup() {
+  const name  = document.getElementById('signup-name').value.trim();
+  const phone = document.getElementById('signup-phone').value.trim();
+  const pass  = document.getElementById('signup-pass').value.trim();
+  const fullPhone = '+20' + phone;
+
+  if (registeredUsers[fullPhone]) { showFieldError('signup-phone', 'الرقم ده مسجل بالفعل، سجّل دخولك'); return; }
+
+  if (selectedRole === 'captain') {
+    // Save basic info first, go to verification screen
+    registeredUsers[fullPhone] = { name, pass, role: 'captain', status: 'pending' };
+    currentPhone = fullPhone;
+    loggedInUser = { name, role: 'captain' };
+    showCaptainVerify();
+    return;
+  }
+
+  // Customer
+  registeredUsers[fullPhone] = { name, pass, role: 'customer', zone: selectedZone };
+  currentPhone = fullPhone;
+  loggedInUser = { name, role: 'customer', zone: selectedZone };
+  showOtpScreen();
+}
+
+/* ── Captain verification ── */
+function showCaptainVerify() {
+  document.getElementById('auth-main').style.display = 'none';
+  document.getElementById('auth-captain-verify').style.display = 'block';
+  // reset docs
+  Object.keys(captainDocs).forEach(k => captainDocs[k] = false);
+  checkVerifyReady();
+}
+
+function markUploaded(boxId, docKey, input) {
+  if (!input.files || !input.files[0]) return;
+  const box = document.getElementById(boxId);
+  box.classList.add('uploaded');
+  box.querySelector('i').className = 'ti ti-circle-check';
+  box.querySelector('.upload-text').textContent = '✓ ' + input.files[0].name.slice(0,20);
+  captainDocs[boxId] = true;
+  checkVerifyReady();
+}
+
+function checkVerifyReady() {
+  const plate = document.getElementById('plate-number').value.trim();
+  const allDocs = Object.values(captainDocs).every(v => v);
+  document.getElementById('verify-btn').disabled = !(allDocs && plate.length >= 3);
+}
+
+function submitCaptainVerify() {
+  const plate = document.getElementById('plate-number').value.trim();
+  // Save to pending list
+  if (registeredUsers[currentPhone]) {
+    registeredUsers[currentPhone].plate = plate;
+    registeredUsers[currentPhone].status = 'pending';
+  }
+  pendingCaptains[currentPhone] = {
+    name: loggedInUser.name,
+    phone: currentPhone,
+    plate,
+    submittedAt: new Date().toLocaleTimeString('ar-EG')
+  };
+  // Add to admin list
+  addCaptainToAdminList(loggedInUser.name, currentPhone, plate);
+  showPendingScreen();
+}
+
+function showPendingScreen() {
+  document.getElementById('auth-main').style.display = 'none';
+  document.getElementById('auth-captain-verify').style.display = 'none';
+  document.getElementById('auth-otp').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'none';
+  document.getElementById('auth-pending').style.display = 'block';
+}
+
+function addCaptainToAdminList(name, phone, plate) {
+  const list = document.getElementById('captain-verify-list');
+  const id = 'capt-' + Date.now();
+  const card = document.createElement('div');
+  card.className = 'captain-review-card';
+  card.id = id;
+  card.innerHTML = `
+    <div class="captain-review-header">
+      <div>
+        <div class="captain-review-name">${name}</div>
+        <div class="captain-review-meta">📱 ${phone} • رقم اللوحة: ${plate}</div>
+      </div>
+      <span class="status-badge s-pending">قيد المراجعة</span>
+    </div>
+    <div class="captain-review-docs">
+      <div class="doc-thumb"><i class="ti ti-id"></i>بطاقة الهوية</div>
+      <div class="doc-thumb"><i class="ti ti-car"></i>صورة العربية</div>
+      <div class="doc-thumb"><i class="ti ti-license"></i>رخصة السواقة</div>
+      <div class="doc-thumb"><i class="ti ti-file-certificate"></i>رخصة العربية</div>
+    </div>
+    <div class="captain-review-actions">
+      <button class="btn btn-success btn-sm" style="flex:1;" onclick="approveCapt('${id}')"><i class="ti ti-check"></i> موافقة</button>
+      <button class="btn btn-danger btn-sm" style="flex:1;" onclick="rejectCapt('${id}')"><i class="ti ti-x"></i> رفض</button>
+    </div>`;
+  list.prepend(card);
+  // Update counter
+  const cnt = document.getElementById('pending-captains-count');
+  cnt.textContent = parseInt(cnt.textContent) + 1;
+}
+
+/* ── Admin: approve / reject captain ── */
+function approveCapt(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const badge = card.querySelector('.status-badge');
+  badge.textContent = 'تم الموافقة';
+  badge.className   = 'status-badge s-accepted';
+  card.querySelectorAll('.captain-review-actions button').forEach(b => b.style.display = 'none');
+  // add tick overlay
+  const tick = document.createElement('div');
+  tick.style.cssText = 'text-align:center; padding:8px; font-size:13px; font-weight:600; color:var(--accent-h);';
+  tick.innerHTML = '<i class="ti ti-circle-check"></i> تمت الموافقة على الكابتن';
+  card.querySelector('.captain-review-actions').replaceWith(tick);
+  updatePendingCount(-1);
+}
+
+function rejectCapt(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const badge = card.querySelector('.status-badge');
+  badge.textContent = 'مرفوض';
+  badge.className   = 'status-badge s-rejected';
+  card.querySelectorAll('.captain-review-actions button').forEach(b => b.style.display = 'none');
+  const rej = document.createElement('div');
+  rej.style.cssText = 'text-align:center; padding:8px; font-size:13px; font-weight:600; color:var(--danger);';
+  rej.innerHTML = '<i class="ti ti-x"></i> تم رفض الطلب';
+  card.querySelector('.captain-review-actions').replaceWith(rej);
+  updatePendingCount(-1);
+}
+
+function updatePendingCount(delta) {
+  const cnt = document.getElementById('pending-captains-count');
+  cnt.textContent = Math.max(0, parseInt(cnt.textContent) + delta);
+}
+
+/* ── OTP ── */
+function showOtpScreen() {
+  document.getElementById('auth-main').style.display    = 'none';
+  document.getElementById('auth-otp').style.display     = 'block';
+  document.getElementById('auth-success').style.display = 'none';
+  document.getElementById('otp-phone-display').textContent = currentPhone;
+  resetOtpInputs();
+  startTimer();
+}
+
+function goBackAuth() {
+  clearInterval(timerInterval);
+  document.getElementById('auth-otp').style.display  = 'none';
+  document.getElementById('auth-captain-verify').style.display = 'none';
+  document.getElementById('auth-pending').style.display = 'none';
+  document.getElementById('auth-main').style.display = 'block';
+}
+
+function resetOtpInputs() {
+  const inputs = document.querySelectorAll('.otp-single');
+  inputs.forEach(inp => {
+    inp.value = ''; inp.classList.remove('filled');
+    const clone = inp.cloneNode(true);
+    inp.parentNode.replaceChild(clone, inp);
+  });
+  const fresh = document.querySelectorAll('.otp-single');
+  fresh.forEach((inp, i) => {
+    inp.addEventListener('input', function () {
+      this.value = this.value.replace(/\D/g, '').slice(-1);
+      this.classList.toggle('filled', this.value !== '');
+      if (this.value && i < fresh.length - 1) fresh[i+1].focus();
+      document.getElementById('otp-btn').disabled = ![...fresh].every(x => x.value.length === 1);
+    });
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Backspace' && !this.value && i > 0) fresh[i-1].focus();
+    });
+  });
+  fresh[0].focus();
+  document.getElementById('otp-btn').disabled = true;
+}
+
+function startTimer() {
+  let secs = 60;
+  const countEl   = document.getElementById('countdown');
+  const timerEl   = document.getElementById('resend-timer');
+  const resendBtn = document.getElementById('resend-btn');
+  countEl.textContent = secs;
+  timerEl.style.display = 'inline';
+  resendBtn.classList.remove('active');
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    secs--;
+    countEl.textContent = secs;
+    if (secs <= 0) {
+      clearInterval(timerInterval);
+      timerEl.style.display = 'none';
+      resendBtn.classList.add('active');
+    }
+  }, 1000);
+}
+
+function resendOtp() { resetOtpInputs(); startTimer(); }
+
+function verifyOtp() {
+  clearInterval(timerInterval);
+  const isSignup = authTab === 'signup';
+  showSuccessScreen(
+    isSignup ? 'تم إنشاء الحساب بنجاح!' : 'تم تسجيل الدخول!',
+    isSignup
+      ? 'مرحباً ' + loggedInUser.name + '، حسابك كـ' + roleArabic(loggedInUser.role) + ' جاهز!'
+      : 'مرحباً بعودتك ' + loggedInUser.name
+  );
+}
+
+function showSuccessScreen(title, sub) {
+  document.getElementById('auth-main').style.display    = 'none';
+  document.getElementById('auth-otp').style.display     = 'none';
+  document.getElementById('auth-captain-verify').style.display = 'none';
+  document.getElementById('auth-success').style.display = 'block';
+  document.getElementById('success-title').textContent  = title;
+  document.getElementById('success-sub').textContent    = sub;
+}
+
+/* ── Enter App ── */
+function enterApp() {
+  document.getElementById('auth-layer').style.display = 'none';
+  document.getElementById('app-layer').style.display  = 'block';
+  setupAppHeader();
+  initMap();
+  document.getElementById('trip-date').valueAsDate = new Date();
+  // Set up customer zone destinations
+  if (loggedInUser.role === 'customer') {
+    setupCustomerZone();
+  }
+}
+
+function setupCustomerZone() {
+  const zone = loggedInUser.zone;
+  const zoneData = ZONES[zone];
+  if (!zoneData) return;
+
+  document.getElementById('zone-pill-text').textContent = '📍 ' + zoneData.label;
+  const destList = document.getElementById('dest-list');
+  destList.innerHTML = '';
+  zoneData.destinations.forEach(dest => {
+    const item = document.createElement('div');
+    item.className = 'dest-item';
+    item.innerHTML = `<i class="ti ${dest.icon}"></i>${dest.name}`;
+    item.onclick = () => {
+      document.querySelectorAll('.dest-item').forEach(d => d.classList.remove('active'));
+      item.classList.add('active');
+      document.getElementById('to-input').value = dest.name;
+    };
+    destList.appendChild(item);
+  });
+}
+
+/* ── Logout ── */
+function doLogout() {
+  document.getElementById('app-layer').style.display   = 'none';
+  document.getElementById('auth-layer').style.display  = 'flex';
+  ['auth-success','auth-otp','auth-captain-verify','auth-pending'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('auth-main').style.display = 'block';
+  ['login-phone','login-pass','signup-name','signup-phone','signup-pass'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  selectedZone = '';
+  document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('selected'));
+  selectRole('customer');
+  checkLoginReady(); checkSignupReady(); switchAuthTab('login');
+}
+
+/* ── App header ── */
+function setupAppHeader() {
+  const roleLabels  = { customer: 'عميل', captain: 'كابتن', admin: 'أدمن' };
+  const roleClasses = { customer: 'customer', captain: 'captain', admin: 'admin' };
+  document.getElementById('header-name').textContent   = loggedInUser.name || 'المستخدم';
+  document.getElementById('header-avatar').textContent = (loggedInUser.name || 'م').charAt(0);
+  const badge = document.getElementById('header-role-badge');
+  badge.textContent = roleLabels[loggedInUser.role] || 'عميل';
+  badge.className   = 'role-badge ' + (roleClasses[loggedInUser.role] || 'customer');
+
+  const role = loggedInUser.role;
+  document.querySelectorAll('.main-tab').forEach(t => {
+    const tabRole = t.id.replace('mtab-','');
+    t.style.display = role === 'admin' ? 'flex' : (tabRole === role ? 'flex' : 'none');
+  });
+  switchMainTab(role === 'admin' ? 'admin' : role);
+}
+
+/* ══ APP TABS ══ */
+function switchMainTab(tab) {
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.main-screen').forEach(s => s.classList.remove('active'));
+  const tabEl = document.getElementById('mtab-' + tab);
+  const scrEl = document.getElementById('mscreen-' + tab);
+  if (tabEl) tabEl.classList.add('active');
+  if (scrEl) scrEl.classList.add('active');
+  if (tab === 'customer') setTimeout(resizeMap, 100);
+}
+
+/* ══ LEAFLET MAP ══ */
+let map, fromMarker, toMarker, routeLine;
+let mapClickState = 0;
+
+function initMap() {
+  if (map) { resizeMap(); return; }
+  map = L.map('leaflet-map', { zoomControl: true }).setView([30.0444, 31.2357], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
+
+  const fromIcon = L.divIcon({ className: '', html: '<div style="background:#1D9E75;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>', iconSize:[16,16], iconAnchor:[8,8] });
+  const toIcon   = L.divIcon({ className: '', html: '<div style="background:#D85A30;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>', iconSize:[16,16], iconAnchor:[8,8] });
+
+  map.on('click', function(e) {
+    const lat = e.latlng.lat.toFixed(4);
+    const lng = e.latlng.lng.toFixed(4);
+    const coordLabel = lat + ', ' + lng;
+    if (mapClickState === 0) {
+      if (fromMarker) map.removeLayer(fromMarker);
+      fromMarker = L.marker(e.latlng, { icon: fromIcon }).addTo(map).bindPopup('نقطة الانطلاق').openPopup();
+      document.getElementById('ms-from').textContent = coordLabel;
+      document.getElementById('from-input').value = coordLabel;
+      mapClickState = 1;
+    } else {
+      if (toMarker) map.removeLayer(toMarker);
+      toMarker = L.marker(e.latlng, { icon: toIcon }).addTo(map).bindPopup('الوجهة').openPopup();
+      document.getElementById('ms-to').textContent = coordLabel;
+      mapClickState = 0;
+      drawRoute();
+    }
+  });
+}
+
+function drawRoute() {
+  if (!fromMarker || !toMarker) return;
+  if (routeLine) map.removeLayer(routeLine);
+  routeLine = L.polyline([fromMarker.getLatLng(), toMarker.getLatLng()], { color: '#1D9E75', weight: 3, dashArray: '8,6', opacity: .85 }).addTo(map);
+  map.fitBounds(routeLine.getBounds(), { padding: [30,30] });
+}
+
+function resizeMap() { if (map) map.invalidateSize(); }
+
+/* ══ BOOKING ══ */
+let passengers   = 2;
+let selectedTime = '8 م';
+let isOnline     = false;
+
+function selectTime(el, time) {
+  document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTime = time;
+}
+
+function changePass(delta) {
+  passengers = Math.max(1, Math.min(8, passengers + delta));
+  document.getElementById('pass-count').textContent = passengers;
+}
+
+function confirmBooking() {
+  const from  = document.getElementById('from-input').value  || 'غير محدد';
+  const to    = document.getElementById('to-input').value    || 'غير محددة';
+  const date  = document.getElementById('trip-date').value   || 'اليوم';
+  const price = (passengers * 20 + 40) + ' جنيه';
+
+  document.getElementById('conf-from').textContent  = from;
+  document.getElementById('conf-to').textContent    = to;
+  document.getElementById('conf-time').textContent  = date + ' • ' + selectedTime;
+  document.getElementById('conf-pass').textContent  = passengers + ' شخص';
+  document.getElementById('conf-price').textContent = price;
+  document.getElementById('booking-confirm-box').classList.add('show');
+
+  setTimeout(() => {
+    document.getElementById('booking-toast').style.display = 'block';
+    const adminCount = document.getElementById('admin-bookings');
+    adminCount.textContent = parseInt(adminCount.textContent) + 1;
+    const adminTrips = document.getElementById('admin-trips');
+    const newTrip = document.createElement('div');
+    newTrip.className = 'trip-card';
+    newTrip.innerHTML = '<div style="flex:1;"><div class="trip-route">' + from + ' → ' + to + '</div><div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> ' + date + ' ' + selectedTime + ' • ' + passengers + ' شخص • ' + (loggedInUser.name || 'عميل') + '</div></div><span class="status-badge s-new">جديد</span>';
+    adminTrips.prepend(newTrip);
+
+    if (isOnline) {
+      const notif = document.getElementById('new-trip-notif');
+      document.getElementById('notif-details').textContent = 'من ' + from.slice(0,15) + ' إلى ' + to.slice(0,15) + ' • ' + selectedTime + ' • ' + passengers + ' أشخاص';
+      notif.style.display = 'flex';
+    }
+  }, 400);
+}
+
+/* ══ CAPTAIN ══ */
+function toggleOnline() {
+  isOnline = !isOnline;
+  document.getElementById('online-toggle-sw').classList.toggle('on', isOnline);
+  document.getElementById('online-label').textContent = isOnline ? 'أنت أونلاين' : 'أنت أوفلاين';
+  if (!isOnline) document.getElementById('new-trip-notif').style.display = 'none';
+}
+
+function acceptTrip() {
+  document.getElementById('new-trip-notif').style.display = 'none';
+  const notifDetails = document.getElementById('notif-details').textContent;
+  const parts = notifDetails.split(' • ');
+  document.getElementById('active-route').textContent = parts[0] || 'المعادي → مدينة نصر';
+  document.getElementById('active-time').textContent  = parts[1] || '8:00 م';
+  document.getElementById('active-pass').textContent  = parts[2] || '3 أشخاص';
+  document.getElementById('active-trip').style.display = 'block';
+}
+
+function completeTrip() {
+  const trip = document.getElementById('active-trip');
+  trip.querySelector('.status-badge').textContent = 'منتهية';
+  trip.querySelector('.status-badge').className   = 'status-badge s-done';
+  trip.querySelector('.captain-trip-header').style.opacity = '.7';
+  trip.querySelectorAll('button').forEach(b => b.style.display = 'none');
+  const price = parseInt((document.getElementById('active-price').textContent || '85').replace(/\D/g,'')) || 85;
+  const earn  = document.getElementById('capt-earn');
+  earn.textContent = parseInt(earn.textContent) + price;
+  const trips = document.getElementById('capt-trips');
+  trips.textContent = parseInt(trips.textContent) + 1;
+}
+
+/* ══ HELPERS ══ */
+function roleArabic(r) { return { customer: 'عميل', captain: 'كابتن', admin: 'أدمن' }[r] || r; }
+
+function showFieldError(fieldId, msg) {
+  const el = document.getElementById(fieldId);
+  el.style.borderColor = '#D85A30';
+  el.style.boxShadow   = '0 0 0 2px rgba(216,90,48,.15)';
+  let err = el.parentElement.querySelector('.field-err');
+  if (!err) { err = document.createElement('div'); err.className = 'field-err'; el.parentElement.appendChild(err); }
+  err.textContent = msg;
+  err.style.cssText = 'color:#D85A30;font-size:12px;margin-top:4px;';
+  setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; if (err) err.remove(); }, 3000);
+}
+</script>
+</body>
+</html>

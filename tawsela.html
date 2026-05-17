@@ -169,20 +169,6 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Zone Selector (Customer Signup) ── */
-    .zone-section { margin-bottom: 1rem; }
-    .zone-section label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-    .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .zone-btn {
-      padding: 10px 8px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
-      background: var(--surface); cursor: pointer; font-family: 'Cairo', sans-serif;
-      font-size: 12px; font-weight: 500; color: var(--muted); transition: all .18s;
-      text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;
-    }
-    .zone-btn i { font-size: 16px; }
-    .zone-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .zone-btn.selected { border-color: var(--accent); background: #E1F5EE; color: var(--accent-h); font-weight: 600; }
-
     /* ── Captain Verification Screen ── */
     #auth-captain-verify { display: none; }
     .upload-field { margin-bottom: 1rem; }
@@ -273,7 +259,8 @@
     .dest-item.active { border-color: var(--accent); background: #E1F5EE; color: var(--accent-h); font-weight: 600; }
     .dest-item i { font-size: 14px; color: var(--accent); }
 
-    #leaflet-map { height: 220px; border-radius: var(--radius-md); border: 0.5px solid #a5d6a7; z-index: 1; }
+    #leaflet-map { height: 260px; border-radius: var(--radius-md); border: 0.5px solid #a5d6a7; z-index: 1; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .map-status { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
     .map-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
     .map-dot.from { background: var(--accent); }
@@ -483,7 +470,7 @@
         <p class="auth-sub" id="signup-sub">أدخل بياناتك للتسجيل</p>
         <div class="field">
           <label>الاسم الكامل</label>
-          <input type="text" id="signup-name" placeholder="محمد أحمد" oninput="checkSignupReady()" />
+          <input type="text" id="signup-name" placeholder="مثال: عمر عنيم " oninput="checkSignupReady()" />
         </div>
         <div class="field">
           <label>رقم الموبايل</label>
@@ -495,19 +482,6 @@
         <div class="field">
           <label>كلمة المرور</label>
           <input type="password" id="signup-pass" placeholder="••••••••" oninput="checkSignupReady()" />
-        </div>
-
-        <!-- Zone selector (customer only) -->
-        <div class="zone-section" id="zone-section">
-          <label>📍 اختار المنطقة اللي هتطلب منها</label>
-          <div class="zone-grid" id="zone-grid">
-            <button class="zone-btn" data-zone="zayed" onclick="selectZone(this, 'zayed')">
-              <i class="ti ti-building-community"></i> الشيخ زايد
-            </button>
-            <button class="zone-btn" data-zone="october" onclick="selectZone(this, 'october')">
-              <i class="ti ti-map-pin"></i> مدينة أكتوبر
-            </button>
-          </div>
         </div>
 
         <button class="submit-btn" id="signup-btn" disabled onclick="doSignup()">إرسال كود التأكيد</button>
@@ -651,16 +625,34 @@
     </div>
 
     <div class="card">
-      <div class="card-title"><i class="ti ti-map-2"></i> حدد الرحلة على الخريطة</div>
-      <div id="leaflet-map"></div>
-      <div class="map-status" id="map-status">
+      <div class="card-title" style="justify-content:space-between;">
+        <span style="display:flex;align-items:center;gap:6px;"><i class="ti ti-map-2"></i> حدد الرحلة على الخريطة</span>
+        <button id="locate-btn" onclick="locateMe()" style="
+          display:flex; align-items:center; gap:5px; padding:6px 12px;
+          background:var(--accent); color:#fff; border:none; border-radius:8px;
+          font-family:'Cairo',sans-serif; font-size:12px; font-weight:600;
+          cursor:pointer; transition:background .15s; white-space:nowrap;
+        " onmouseover="this.style.background='var(--accent-h)'" onmouseout="this.style.background='var(--accent)'">
+          <i class="ti ti-current-location" style="font-size:15px;"></i> موقعي الحالي
+        </button>
+      </div>
+      <div style="position:relative;">
+        <div id="leaflet-map"></div>
+        <div id="locate-spinner" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+          background:rgba(255,255,255,0.92); border-radius:10px; padding:10px 16px;
+          font-size:13px; color:var(--accent-h); font-weight:600; z-index:999;
+          display:none; align-items:center; gap:8px; box-shadow:0 2px 12px rgba(0,0,0,.15);">
+          <i class="ti ti-loader-2" style="font-size:18px; animation:spin 1s linear infinite;"></i> جاري تحديد موقعك…
+        </div>
+      </div>
+      <div class="map-status" id="map-status" style="margin-top:6px;">
         <span class="map-dot from"></span> من: <span id="ms-from">لم يتم التحديد</span>
         &nbsp;&nbsp;
         <span class="map-dot to"></span> إلى: <span id="ms-to">لم يتم التحديد</span>
       </div>
       <div style="font-size:12px; color:var(--muted); margin-top:4px;">
         <i class="ti ti-info-circle" style="font-size:13px;"></i>
-        اضغط مرة لتحديد نقطة الانطلاق، مرة ثانية للوجهة
+        اضغط على الخريطة: أول ضغطة = نقطة الانطلاق، تانية = الوجهة
       </div>
     </div>
 
@@ -802,7 +794,6 @@
     <!-- Captain verification requests -->
     <div class="section-title"><i class="ti ti-user-check"></i> طلبات توثيق الكباتن</div>
     <div id="captain-verify-list">
-      <!-- demo entries -->
       <div class="captain-review-card" id="capt-req-demo1">
         <div class="captain-review-header">
           <div>
@@ -849,7 +840,7 @@
       <div class="trip-card">
         <div style="flex:1;">
           <div class="trip-route">الشيخ زايد → التجمع الخامس</div>
-          <div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> اليوم 8:00 م • 3 أشخاص • أحمد محمد</div>
+          <div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> اليوم 8:00 م • 3 أشخاص • عمر غنيم</div>
         </div>
         <span class="status-badge s-new">جديد</span>
       </div>
@@ -888,7 +879,7 @@
     <div class="trip-card">
       <div class="avatar" style="background:#E6F1FB; color:#185FA5;">عم</div>
       <div style="flex:1;">
-        <div class="trip-route">عمر خالد</div>
+        <div class="trip-route">عمر غنيم</div>
         <div class="trip-meta">هيونداي إلنترا • أسود • ⭐ 4.9</div>
       </div>
       <span class="status-badge s-busy">في رحلة</span>
@@ -939,14 +930,11 @@ const ZONES = {
 const ADMIN_PASSWORD = '12345678910';
 
 const registeredUsers = {};
-// pending captain verifications
 const pendingCaptains = {};
-// captain doc uploads tracker (in-memory)
 const captainDocs = { 'box-id': false, 'box-car': false, 'box-dlicense': false, 'box-clicense': false };
 
 let authTab       = 'login';
 let selectedRole  = 'customer';
-let selectedZone  = '';   // for customer signup
 let currentPhone  = '';
 let timerInterval = null;
 let loggedInUser  = { name: 'المستخدم', role: 'customer', zone: '' };
@@ -962,9 +950,6 @@ function selectRole(role) {
   document.getElementById('tabs-row').style.display       = isAdmin ? 'none' : 'flex';
   document.getElementById('login-fields').style.display   = 'block';
   document.getElementById('signup-fields').style.display  = 'none';
-
-  // Show zone selector only for customer
-  document.getElementById('zone-section').style.display = role === 'customer' ? 'block' : 'none';
 
   if (isAdmin) {
     document.getElementById('login-title').textContent  = 'دخول الأدمن';
@@ -984,14 +969,6 @@ function selectRole(role) {
   document.getElementById('login-pass').value = '';
   document.getElementById('login-phone').value = '';
   checkLoginReady();
-}
-
-/* ── Zone selector (customer signup) ── */
-function selectZone(el, zone) {
-  selectedZone = zone;
-  document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected');
-  checkSignupReady();
 }
 
 /* ── Auth tabs ── */
@@ -1019,8 +996,7 @@ function checkSignupReady() {
   const name  = document.getElementById('signup-name').value.trim();
   const phone = document.getElementById('signup-phone').value.trim();
   const pass  = document.getElementById('signup-pass').value.trim();
-  const zoneOk = selectedRole === 'captain' ? true : selectedZone !== '';
-  document.getElementById('signup-btn').disabled = !(name.length >= 2 && phone.length >= 10 && pass.length >= 4 && zoneOk);
+  document.getElementById('signup-btn').disabled = !(name.length >= 2 && phone.length >= 10 && pass.length >= 4);
 }
 
 /* ── Login ── */
@@ -1044,7 +1020,6 @@ function doLogin() {
     showFieldError('login-phone', 'هذا الحساب مسجل كـ ' + roleArabic(stored.role) + ' وليس ' + roleArabic(selectedRole));
     return;
   }
-  // Captain: check approval status
   if (stored.role === 'captain' && stored.status === 'pending') {
     showPendingScreen();
     return;
@@ -1069,7 +1044,6 @@ function doSignup() {
   if (registeredUsers[fullPhone]) { showFieldError('signup-phone', 'الرقم ده مسجل بالفعل، سجّل دخولك'); return; }
 
   if (selectedRole === 'captain') {
-    // Save basic info first, go to verification screen
     registeredUsers[fullPhone] = { name, pass, role: 'captain', status: 'pending' };
     currentPhone = fullPhone;
     loggedInUser = { name, role: 'captain' };
@@ -1077,10 +1051,10 @@ function doSignup() {
     return;
   }
 
-  // Customer
-  registeredUsers[fullPhone] = { name, pass, role: 'customer', zone: selectedZone };
+  // Customer — no zone required
+  registeredUsers[fullPhone] = { name, pass, role: 'customer', zone: '' };
   currentPhone = fullPhone;
-  loggedInUser = { name, role: 'customer', zone: selectedZone };
+  loggedInUser = { name, role: 'customer', zone: '' };
   showOtpScreen();
 }
 
@@ -1088,7 +1062,6 @@ function doSignup() {
 function showCaptainVerify() {
   document.getElementById('auth-main').style.display = 'none';
   document.getElementById('auth-captain-verify').style.display = 'block';
-  // reset docs
   Object.keys(captainDocs).forEach(k => captainDocs[k] = false);
   checkVerifyReady();
 }
@@ -1111,18 +1084,14 @@ function checkVerifyReady() {
 
 function submitCaptainVerify() {
   const plate = document.getElementById('plate-number').value.trim();
-  // Save to pending list
   if (registeredUsers[currentPhone]) {
     registeredUsers[currentPhone].plate = plate;
     registeredUsers[currentPhone].status = 'pending';
   }
   pendingCaptains[currentPhone] = {
-    name: loggedInUser.name,
-    phone: currentPhone,
-    plate,
+    name: loggedInUser.name, phone: currentPhone, plate,
     submittedAt: new Date().toLocaleTimeString('ar-EG')
   };
-  // Add to admin list
   addCaptainToAdminList(loggedInUser.name, currentPhone, plate);
   showPendingScreen();
 }
@@ -1160,7 +1129,6 @@ function addCaptainToAdminList(name, phone, plate) {
       <button class="btn btn-danger btn-sm" style="flex:1;" onclick="rejectCapt('${id}')"><i class="ti ti-x"></i> رفض</button>
     </div>`;
   list.prepend(card);
-  // Update counter
   const cnt = document.getElementById('pending-captains-count');
   cnt.textContent = parseInt(cnt.textContent) + 1;
 }
@@ -1172,8 +1140,6 @@ function approveCapt(cardId) {
   const badge = card.querySelector('.status-badge');
   badge.textContent = 'تم الموافقة';
   badge.className   = 'status-badge s-accepted';
-  card.querySelectorAll('.captain-review-actions button').forEach(b => b.style.display = 'none');
-  // add tick overlay
   const tick = document.createElement('div');
   tick.style.cssText = 'text-align:center; padding:8px; font-size:13px; font-weight:600; color:var(--accent-h);';
   tick.innerHTML = '<i class="ti ti-circle-check"></i> تمت الموافقة على الكابتن';
@@ -1187,7 +1153,6 @@ function rejectCapt(cardId) {
   const badge = card.querySelector('.status-badge');
   badge.textContent = 'مرفوض';
   badge.className   = 'status-badge s-rejected';
-  card.querySelectorAll('.captain-review-actions button').forEach(b => b.style.display = 'none');
   const rej = document.createElement('div');
   rej.style.cssText = 'text-align:center; padding:8px; font-size:13px; font-weight:600; color:var(--danger);';
   rej.innerHTML = '<i class="ti ti-x"></i> تم رفض الطلب';
@@ -1290,21 +1255,35 @@ function enterApp() {
   setupAppHeader();
   initMap();
   document.getElementById('trip-date').valueAsDate = new Date();
-  // Set up customer zone destinations
+  // Show default destinations for customer (no zone selected, show all)
   if (loggedInUser.role === 'customer') {
     setupCustomerZone();
   }
 }
 
 function setupCustomerZone() {
-  const zone = loggedInUser.zone;
-  const zoneData = ZONES[zone];
-  if (!zoneData) return;
+  // Hide the zone pill since no zone is stored
+  document.getElementById('customer-zone-pill').style.display = 'none';
 
-  document.getElementById('zone-pill-text').textContent = '📍 ' + zoneData.label;
+  // Show a combined list of all destinations
+  const allDests = [
+    { name: 'مدينة نصر', icon: 'ti-building' },
+    { name: 'المهندسين', icon: 'ti-building-skyscraper' },
+    { name: 'الدقي', icon: 'ti-map-pin' },
+    { name: 'وسط البلد', icon: 'ti-building-arch' },
+    { name: 'التجمع الخامس', icon: 'ti-building-community' },
+    { name: 'مطار القاهرة', icon: 'ti-plane' },
+    { name: 'الجيزة', icon: 'ti-pyramid' },
+    { name: 'الهرم', icon: 'ti-pyramid' },
+    { name: 'العجوزة', icon: 'ti-map-pin' },
+    { name: 'إمبابة', icon: 'ti-map-pin' },
+    { name: 'الشيخ زايد', icon: 'ti-building-community' },
+    { name: 'أكتوبر', icon: 'ti-map-pin' },
+  ];
+
   const destList = document.getElementById('dest-list');
   destList.innerHTML = '';
-  zoneData.destinations.forEach(dest => {
+  allDests.forEach(dest => {
     const item = document.createElement('div');
     item.className = 'dest-item';
     item.innerHTML = `<i class="ti ${dest.icon}"></i>${dest.name}`;
@@ -1328,8 +1307,6 @@ function doLogout() {
   ['login-phone','login-pass','signup-name','signup-phone','signup-pass'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  selectedZone = '';
-  document.querySelectorAll('.zone-btn').forEach(b => b.classList.remove('selected'));
   selectRole('customer');
   checkLoginReady(); checkSignupReady(); switchAuthTab('login');
 }
@@ -1364,42 +1341,142 @@ function switchMainTab(tab) {
 }
 
 /* ══ LEAFLET MAP ══ */
-let map, fromMarker, toMarker, routeLine;
+let map, fromMarker, toMarker, routeLine, myLocMarker, myLocCircle;
 let mapClickState = 0;
+
+const fromIcon = L.divIcon ? null : null; // defined after Leaflet loads
+function getFromIcon() {
+  return L.divIcon({ className: '', html: '<div style="background:#1D9E75;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);"></div>', iconSize:[18,18], iconAnchor:[9,9] });
+}
+function getToIcon() {
+  return L.divIcon({ className: '', html: '<div style="background:#D85A30;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);"></div>', iconSize:[18,18], iconAnchor:[9,9] });
+}
+function getMyIcon() {
+  return L.divIcon({ className: '', html: `
+    <div style="position:relative;width:22px;height:22px;">
+      <div style="position:absolute;inset:0;background:#1a73e8;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div>
+      <div style="position:absolute;inset:-8px;background:rgba(26,115,232,0.18);border-radius:50%;animation:pulse 1.8s ease-out infinite;"></div>
+    </div>`, iconSize:[22,22], iconAnchor:[11,11] });
+}
 
 function initMap() {
   if (map) { resizeMap(); return; }
-  map = L.map('leaflet-map', { zoomControl: true }).setView([30.0444, 31.2357], 11);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
-
-  const fromIcon = L.divIcon({ className: '', html: '<div style="background:#1D9E75;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>', iconSize:[16,16], iconAnchor:[8,8] });
-  const toIcon   = L.divIcon({ className: '', html: '<div style="background:#D85A30;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>', iconSize:[16,16], iconAnchor:[8,8] });
+  map = L.map('leaflet-map', { zoomControl: true }).setView([30.0444, 31.2357], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 19
+  }).addTo(map);
 
   map.on('click', function(e) {
-    const lat = e.latlng.lat.toFixed(4);
-    const lng = e.latlng.lng.toFixed(4);
+    const lat = e.latlng.lat.toFixed(5);
+    const lng = e.latlng.lng.toFixed(5);
     const coordLabel = lat + ', ' + lng;
     if (mapClickState === 0) {
       if (fromMarker) map.removeLayer(fromMarker);
-      fromMarker = L.marker(e.latlng, { icon: fromIcon }).addTo(map).bindPopup('نقطة الانطلاق').openPopup();
+      fromMarker = L.marker(e.latlng, { icon: getFromIcon() }).addTo(map).bindPopup('🟢 نقطة الانطلاق').openPopup();
       document.getElementById('ms-from').textContent = coordLabel;
       document.getElementById('from-input').value = coordLabel;
       mapClickState = 1;
     } else {
       if (toMarker) map.removeLayer(toMarker);
-      toMarker = L.marker(e.latlng, { icon: toIcon }).addTo(map).bindPopup('الوجهة').openPopup();
+      toMarker = L.marker(e.latlng, { icon: getToIcon() }).addTo(map).bindPopup('🔴 الوجهة').openPopup();
       document.getElementById('ms-to').textContent = coordLabel;
       mapClickState = 0;
       drawRoute();
     }
   });
+
+  // Add pulse style dynamically
+  if (!document.getElementById('pulse-style')) {
+    const s = document.createElement('style');
+    s.id = 'pulse-style';
+    s.textContent = `@keyframes pulse { 0%{transform:scale(0.6);opacity:.8} 100%{transform:scale(2.2);opacity:0} }`;
+    document.head.appendChild(s);
+  }
+}
+
+function locateMe() {
+  if (!navigator.geolocation) {
+    showLocateError('متصفحك لا يدعم تحديد الموقع');
+    return;
+  }
+  const spinner = document.getElementById('locate-spinner');
+  const btn     = document.getElementById('locate-btn');
+  spinner.style.display = 'flex';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      spinner.style.display = 'none';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = pos.coords.accuracy;
+      const latlng = L.latLng(lat, lng);
+
+      // Remove old location markers
+      if (myLocMarker) map.removeLayer(myLocMarker);
+      if (myLocCircle) map.removeLayer(myLocCircle);
+
+      // Accuracy circle
+      myLocCircle = L.circle(latlng, {
+        radius: acc, color: '#1a73e8', fillColor: '#1a73e8',
+        fillOpacity: 0.08, weight: 1.5, opacity: 0.4
+      }).addTo(map);
+
+      // My location marker
+      myLocMarker = L.marker(latlng, { icon: getMyIcon() })
+        .addTo(map)
+        .bindPopup('📍 موقعك الحالي<br><small style="color:#666;">' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '</small>')
+        .openPopup();
+
+      // Center map on location
+      map.setView(latlng, 15, { animate: true });
+
+      // Auto-set as from point
+      if (fromMarker) map.removeLayer(fromMarker);
+      fromMarker = L.marker(latlng, { icon: getFromIcon() }).addTo(map);
+      document.getElementById('ms-from').textContent = lat.toFixed(5) + ', ' + lng.toFixed(5);
+      document.getElementById('from-input').value = 'موقعي الحالي';
+      mapClickState = 1;
+    },
+    function(err) {
+      spinner.style.display = 'none';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      const msgs = {
+        1: 'تم رفض إذن الموقع — فعّله من إعدادات المتصفح',
+        2: 'تعذّر تحديد الموقع، تأكد من تفعيل GPS',
+        3: 'انتهت مهلة التحديد، حاول مرة أخرى'
+      };
+      showLocateError(msgs[err.code] || 'خطأ في تحديد الموقع');
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+  );
+}
+
+function showLocateError(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:#D85A30; color:white; padding:10px 18px; border-radius:10px;
+    font-size:13px; font-weight:600; z-index:9999; font-family:'Cairo',sans-serif;
+    box-shadow:0 4px 16px rgba(0,0,0,.2); display:flex; align-items:center; gap:8px;
+  `;
+  el.innerHTML = '<i class="ti ti-alert-circle"></i> ' + msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
 }
 
 function drawRoute() {
   if (!fromMarker || !toMarker) return;
   if (routeLine) map.removeLayer(routeLine);
-  routeLine = L.polyline([fromMarker.getLatLng(), toMarker.getLatLng()], { color: '#1D9E75', weight: 3, dashArray: '8,6', opacity: .85 }).addTo(map);
-  map.fitBounds(routeLine.getBounds(), { padding: [30,30] });
+  routeLine = L.polyline([fromMarker.getLatLng(), toMarker.getLatLng()], {
+    color: '#1D9E75', weight: 4, dashArray: '10,7', opacity: .9
+  }).addTo(map);
+  map.fitBounds(routeLine.getBounds(), { padding: [40,40] });
 }
 
 function resizeMap() { if (map) map.invalidateSize(); }

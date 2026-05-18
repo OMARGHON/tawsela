@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تطبيق الحجز المسبق</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f4f3ef;
+      --surface:   #ffffff;
+      --border:    rgba(0,0,0,0.10);
+      --border-md: rgba(0,0,0,0.18);
+      --text:      #16150f;
+      --muted:     #6b6a65;
+      --hint:      #9b9a96;
+      --accent:    #1D9E75;
+      --accent-h:  #0F6E56;
+      --success:   #2e7d32;
+      --success-bg:#e8f5e9;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --danger:    #D85A30;
+      --danger-h:  #993C1D;
+    }
+
+    html.dark {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --border:    rgba(255,255,255,0.07);
+      --border-md: rgba(255,255,255,0.13);
+      --text:      #e8e7e2;
+      --muted:     #9b9a96;
+      --hint:      #6b6a65;
+      --accent:    #1D9E75;
+      --accent-h:  #25c490;
+      --success:   #4caf50;
+      --success-bg:#0d2e10;
+      --danger:    #e06040;
+      --danger-h:  #b84a2a;
+    }
+
+    html.dark .tabs { background: #12151e; }
+    html.dark .tab-btn.active { background: var(--surface); }
+    html.dark .phone-prefix { background: #12151e; }
+    html.dark input[type="text"],
+    html.dark input[type="password"],
+    html.dark input[type="tel"],
+    html.dark input[type="date"] { background: #12151e; }
+    html.dark .field-input { background: #12151e; }
+    html.dark .role-btn { background: var(--surface); }
+    html.dark .role-btn.selected { background: #0d2e1f; }
+    html.dark #auth-layer::before { opacity: 0.4; }
+    html.dark .upload-box { background: #12151e; }
+    html.dark .upload-box:hover { background: #0d2418; }
+    html.dark .upload-box.uploaded { background: #0d2e1f; }
+    html.dark .stat-box { background: #12151e; }
+    html.dark .booking-confirm { background: #0d2e1f; border-color: #1D9E75; }
+    html.dark #booking-toast { background: #0d2e1f; border-color: #1D9E75; }
+    html.dark .time-picker-btn { background: #12151e; }
+    html.dark .pass-btn { background: #12151e; }
+    html.dark .online-toggle { background: #12151e; }
+    html.dark .tp-period-btn,
+    html.dark .tp-hour-btn,
+    html.dark .tp-min-btn { background: #12151e; }
+    html.dark .s-new      { background: #0e1e35; }
+    html.dark .s-done     { background: #1e1d19; }
+    html.dark .s-accepted { background: #132208; }
+    html.dark .s-pending  { background: #2a1a05; }
+    html.dark .s-online   { background: #0d2e1f; }
+    html.dark .profile-drawer { background: var(--bg); }
+    html.dark .lang-switch-btn { background: #12151e; }
+    html.dark .profile-logout-btn { background: #2a0e0e; border-color: #7f1d1d; }
+    html.dark .drop-item:hover, html.dark .drop-item.focused { background: #0d2e1f; }
+    html.dark .avatar-btn:hover { background: #12151e; }
+    html.dark .doc-thumb { background: #12151e; }
+
+    /* Smooth color transitions */
+    body, .auth-card, .app-header, .card, .trip-card, .captain-trip,
+    .captain-review-card, .profile-drawer, .profile-header, .profile-card,
+    .profile-avatar-section, .main-tab-bar, .search-dropdown,
+    .time-picker-panel, .booking-confirm, .online-toggle, .stat-box,
+    input, .field-input, .role-btn, .tab-btn, .tabs {
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Dark Mode Toggle Button */
+    .dark-toggle {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--bg); border: 0.5px solid var(--border-md);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--muted); transition: all .2s; flex-shrink: 0;
+    }
+    .dark-toggle:hover { background: var(--surface); color: var(--accent); border-color: var(--accent); }
+    .dark-toggle i { font-size: 17px; pointer-events: none; }
+
+    html, body { height: 100%; }
+    body { font-family: 'Cairo', sans-serif; background: var(--bg); min-height: 100vh; }
+
+    /* ════ AUTH LAYER ════ */
+    #auth-layer {
+      min-height: 100vh; display: flex; align-items: center;
+      justify-content: center; padding: 1.5rem;
+      position: relative;
+    }
+    #auth-layer::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: radial-gradient(circle, rgba(29,158,117,0.07) 1px, transparent 1px);
+      background-size: 28px 28px; pointer-events: none; z-index: 0;
+    }
+    .auth-card {
+      position: relative; z-index: 1; background: var(--surface);
+      border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+      padding: 2rem 2.5rem; width: 100%; max-width: 440px;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.07); animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .auth-logo {
+      width: 48px; height: 48px; background: var(--accent); border-radius: 13px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;
+    }
+    .auth-logo i { color: #fff; font-size: 24px; }
+    .auth-app-name { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .auth-app-sub  { font-size: 13px; color: var(--muted); margin-bottom: 1.75rem; }
+
+    /* Only 2 role buttons now */
+    .role-select { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 1.5rem; }
+    .role-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 8px; border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
+      background: var(--surface); cursor: pointer; font-family: 'Cairo', sans-serif;
+      font-size: 12px; font-weight: 500; color: var(--muted); transition: all .18s;
+    }
+    .role-btn i { font-size: 22px; }
+    .role-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .role-btn.selected { border-color: var(--accent); background: #E1F5EE; color: var(--accent-h); font-weight: 600; }
+
+    .tabs {
+      display: flex; gap: 4px; background: #f4f3ef; border-radius: var(--radius-md);
+      padding: 4px; margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      flex: 1; padding: 8px; border: none; background: none; cursor: pointer;
+      font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 500;
+      color: var(--muted); border-radius: 7px; transition: all 0.18s;
+    }
+    .tab-btn.active {
+      background: var(--surface); color: var(--text);
+      border: 0.5px solid var(--border-md); font-weight: 600;
+    }
+
+    .auth-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .auth-sub   { font-size: 13px; color: var(--muted); margin-bottom: 1.75rem; line-height: 1.6; }
+
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+    .phone-wrap { display: flex; gap: 8px; }
+    .phone-prefix {
+      display: flex; align-items: center; padding: 10px 12px;
+      background: #f4f3ef; border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); font-size: 14px; font-weight: 500;
+      color: var(--muted); white-space: nowrap; direction: ltr;
+    }
+
+    input[type="text"], input[type="password"], input[type="tel"], input[type="date"] {
+      width: 100%; padding: 10px 14px; font-family: 'Cairo', sans-serif;
+      font-size: 14px; background: var(--surface); border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); color: var(--text); outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus, input[type="password"]:focus, input[type="tel"]:focus, input[type="date"]:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+    }
+    input::placeholder { color: var(--hint); }
+    .phone-wrap input { direction: ltr; text-align: left; }
+
+    .submit-btn {
+      width: 100%; padding: 11px; background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-md); font-family: 'Cairo', sans-serif;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, transform 0.1s; margin-top: 0.25rem;
+    }
+    .submit-btn:hover:not(:disabled)  { background: var(--accent-h); }
+    .submit-btn:active:not(:disabled) { transform: scale(0.99); }
+    .submit-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+    .switch-row { text-align: center; margin-top: 1.25rem; font-size: 13px; color: var(--muted); }
+    .switch-row button {
+      background: none; border: none; cursor: pointer; font-family: 'Cairo', sans-serif;
+      font-size: 13px; font-weight: 700; color: var(--accent); padding: 0; margin-right: 4px;
+    }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
+      cursor: pointer; font-family: 'Cairo', sans-serif; font-size: 13px; color: var(--muted);
+      margin-bottom: 1rem; padding: 0; transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    .otp-hint { font-size: 13px; color: var(--muted); margin-bottom: 1.25rem; line-height: 1.7; }
+    .otp-hint strong { color: var(--text); }
+    .otp-inputs { display: flex; gap: 8px; justify-content: center; direction: ltr; margin-bottom: 1rem; }
+    .otp-single {
+      width: 50px !important; height: 54px; text-align: center;
+      font-size: 22px; font-weight: 700; font-family: 'Cairo', sans-serif;
+      border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
+      background: var(--surface); color: var(--text); outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s; padding: 0;
+    }
+    .otp-single:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,158,117,0.12); }
+    .otp-single.filled { border-color: var(--accent); }
+
+    .resend-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+    .resend-timer { font-size: 13px; color: var(--muted); }
+    .resend-btn {
+      font-size: 13px; font-family: 'Cairo', sans-serif; color: var(--accent);
+      background: none; border: none; cursor: pointer; font-weight: 600;
+      opacity: 0.4; pointer-events: none; transition: opacity 0.2s;
+    }
+    .resend-btn.active { opacity: 1; pointer-events: all; }
+
+    .success-wrap { text-align: center; padding: 1rem 0 0.5rem; }
+    .success-icon {
+      width: 60px; height: 60px; background: var(--success-bg);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+    .success-icon i { font-size: 28px; color: var(--success); }
+    .success-wrap h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .success-wrap p  { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.6; }
+
+    .auth-screen { animation: fadeIn 0.22s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #auth-captain-verify { display: none; }
+    .upload-field { margin-bottom: 1rem; }
+    .upload-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .upload-box {
+      border: 1.5px dashed var(--border-md); border-radius: var(--radius-md);
+      padding: 16px; text-align: center; cursor: pointer;
+      transition: all .18s; background: #f9fafb; position: relative;
+    }
+    .upload-box:hover { border-color: var(--accent); background: #f0faf6; }
+    .upload-box input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-box i { font-size: 24px; color: var(--hint); display: block; margin-bottom: 4px; }
+    .upload-box .upload-text { font-size: 12px; color: var(--muted); }
+    .upload-box.uploaded { border-color: var(--accent); background: #E1F5EE; }
+    .upload-box.uploaded i { color: var(--accent); }
+    .upload-box.uploaded .upload-text { color: var(--accent-h); font-weight: 600; }
+
+    .pending-screen { text-align: center; padding: 1rem 0; }
+    .pending-icon {
+      width: 60px; height: 60px; background: #FAEEDA; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;
+    }
+    .pending-icon i { font-size: 28px; color: #854F0B; }
+
+    @media (max-width: 480px) {
+      .auth-card { padding: 1.5rem 1.25rem; }
+      .otp-single { width: 42px !important; height: 46px; font-size: 18px; }
+    }
+
+    /* ════ APP LAYER ════ */
+    #app-layer { display: none; min-height: 100vh; background: var(--bg); }
+
+    .app-header {
+      background: var(--surface); border-bottom: 0.5px solid var(--border);
+      padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100; min-height: 52px;
+    }
+
+    .app-header-logo {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 700; color: var(--text);
+    }
+    .app-header-logo .logo-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent); display: inline-block; flex-shrink: 0;
+    }
+
+    .avatar-btn {
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+      background: none; border: none; font-family: 'Cairo', sans-serif;
+      padding: 4px; border-radius: 10px; transition: background .15s;
+    }
+    .avatar-btn:hover { background: #f4f3ef; }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%; background: #E1F5EE;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--accent-h);
+      border: 2px solid var(--accent); overflow: hidden; flex-shrink: 0;
+      position: relative;
+    }
+    .user-avatar img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+    }
+    .avatar-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .role-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .role-badge.customer { background: #E6F1FB; color: #185FA5; }
+    .role-badge.captain  { background: #E1F5EE; color: #0F6E56; }
+    .role-badge.admin    { background: #FAEEDA; color: #854F0B; }
+
+    .main-tab-bar {
+      display: flex; gap: 0; border-bottom: 0.5px solid var(--border);
+      background: var(--surface); padding: 0 1rem; overflow-x: auto;
+    }
+    .main-tab {
+      padding: 12px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
+      border-bottom: 2px solid transparent; color: var(--muted); transition: all .2s;
+      white-space: nowrap; display: flex; align-items: center; gap: 5px;
+    }
+    .main-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .main-tab:hover:not(.active) { color: var(--text); background: #f9fafb; }
+
+    .main-screen { display: none; padding: 1rem; max-width: 680px; margin: 0 auto; }
+    .main-screen.active { display: block; }
+
+    .card { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 1rem 1.25rem; margin-bottom: 12px; }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .card-title i { font-size: 17px; color: var(--accent); }
+
+    .field-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; position: relative; }
+    .field-label { font-size: 13px; color: var(--muted); min-width: 50px; padding-top: 10px; }
+    .field-wrap { flex: 1; position: relative; }
+
+    .field-input {
+      width: 100%; background: #f9fafb; border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); padding: 9px 38px 9px 34px;
+      font-size: 13px; font-family: 'Cairo', sans-serif; color: var(--text);
+      outline: none; direction: rtl;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(29,158,117,.12); }
+    .field-input::placeholder { color: var(--hint); }
+
+    .field-icon {
+      position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+      font-size: 15px; color: var(--hint); pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px;
+    }
+    .field-icon svg { width: 15px; height: 15px; stroke: var(--hint); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .clear-btn {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 13px; color: var(--hint); cursor: pointer;
+      background: none; border: none; padding: 2px; line-height: 1; display: none;
+      font-family: 'Cairo', sans-serif;
+    }
+    .clear-btn.show { display: block; }
+    .clear-btn:hover { color: var(--danger); }
+
+    .search-dropdown {
+      position: absolute; top: calc(100% + 4px); right: 0; left: 0; z-index: 9999;
+      background: var(--surface); border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); box-shadow: 0 6px 24px rgba(0,0,0,.12);
+      max-height: 260px; overflow-y: auto; display: none;
+    }
+    .search-dropdown.open { display: block; }
+
+    .drop-section-label {
+      padding: 8px 12px 4px; font-size: 11px; font-weight: 700;
+      color: var(--hint); letter-spacing: 0.5px; text-transform: uppercase;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .drop-item {
+      padding: 9px 12px; font-size: 13px; font-family: 'Cairo', sans-serif;
+      cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--text);
+      border-bottom: 0.5px solid rgba(0,0,0,.05); transition: background .1s;
+    }
+    .drop-item:last-child { border-bottom: none; }
+    .drop-item:hover, .drop-item.focused { background: #f0faf6; color: var(--accent-h); }
+    .drop-item i { font-size: 14px; color: var(--accent); flex-shrink: 0; }
+    .drop-item .match { color: var(--accent); font-weight: 700; }
+    .drop-item .drop-cat { margin-right: auto; font-size: 11px; color: var(--hint); }
+    .drop-item .drop-badge-pop {
+      margin-right: auto; font-size: 10px; font-weight: 600;
+      background: #E1F5EE; color: var(--accent-h);
+      padding: 2px 7px; border-radius: 10px;
+    }
+    .drop-empty { padding: 14px 12px; font-size: 13px; color: var(--hint); text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+    #leaflet-map { height: 260px; border-radius: var(--radius-md); border: 0.5px solid #a5d6a7; z-index: 1; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .map-status { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .map-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .map-dot.from { background: var(--accent); }
+    .map-dot.to   { background: var(--danger); }
+
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 20px; border-radius: var(--radius-md); font-size: 14px; font-weight: 600;
+      font-family: 'Cairo', sans-serif; cursor: pointer; border: none; transition: all .15s;
+      width: 100%; margin-top: 4px;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-h); }
+    .btn-primary:active { transform: scale(.98); }
+    .btn-outline { background: transparent; border: 0.5px solid var(--border-md); color: var(--text); }
+    .btn-outline:hover { background: #f9fafb; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; margin-top: 0; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: var(--danger-h); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #1b5e20; }
+
+    .time-picker-wrap { position: relative; flex: 1; }
+    .time-picker-btn {
+      width: 100%; background: #f9fafb; border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); padding: 9px 34px 9px 14px;
+      font-size: 13px; font-family: 'Cairo', sans-serif; color: var(--text);
+      outline: none; cursor: pointer; text-align: right;
+      transition: border-color .15s, box-shadow .15s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .time-picker-btn:hover,
+    .time-picker-btn.open { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(29,158,117,.12); }
+    .time-picker-btn .tp-icon { font-size: 15px; color: var(--hint); flex-shrink: 0; }
+    .time-picker-btn .tp-val { flex: 1; }
+    .time-picker-btn .tp-caret { font-size: 13px; color: var(--hint); transition: transform .2s; }
+    .time-picker-btn.open .tp-caret { transform: rotate(180deg); }
+
+    .time-picker-panel {
+      position: absolute; top: calc(100% + 4px); right: 0; left: 0; z-index: 9999;
+      background: var(--surface); border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); box-shadow: 0 6px 24px rgba(0,0,0,.12);
+      padding: 10px; display: none; animation: fadeIn .18s ease;
+    }
+    .time-picker-panel.open { display: block; }
+
+    .tp-period-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .tp-period-btn {
+      padding: 7px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      font-family: 'Cairo', sans-serif; cursor: pointer; border: 0.5px solid var(--border-md);
+      background: #f9fafb; color: var(--muted); transition: all .15s; text-align: center;
+    }
+    .tp-period-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .tp-period-btn.active { background: #E1F5EE; border-color: var(--accent); color: var(--accent-h); }
+
+    .tp-section-label { font-size: 11px; font-weight: 700; color: var(--hint); margin: 8px 0 5px; letter-spacing: 0.4px; }
+
+    .tp-hours-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 8px; }
+    .tp-hour-btn {
+      padding: 7px 4px; border-radius: 7px; font-size: 12px; font-weight: 500;
+      font-family: 'Cairo', sans-serif; cursor: pointer; border: 0.5px solid var(--border);
+      background: #f9fafb; color: var(--muted); transition: all .15s; text-align: center;
+    }
+    .tp-hour-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .tp-hour-btn.selected { background: var(--accent); border-color: var(--accent); color: white; font-weight: 700; }
+
+    .tp-mins-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
+    .tp-min-btn {
+      padding: 7px 4px; border-radius: 7px; font-size: 12px; font-weight: 500;
+      font-family: 'Cairo', sans-serif; cursor: pointer; border: 0.5px solid var(--border);
+      background: #f9fafb; color: var(--muted); transition: all .15s; text-align: center;
+    }
+    .tp-min-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .tp-min-btn.selected { background: var(--accent); border-color: var(--accent); color: white; font-weight: 700; }
+
+    .tp-confirm-btn {
+      width: 100%; padding: 9px; background: var(--accent); color: white;
+      border: none; border-radius: 8px; font-family: 'Cairo', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s;
+    }
+    .tp-confirm-btn:hover { background: var(--accent-h); }
+
+    .passengers { display: flex; align-items: center; gap: 12px; }
+    .pass-btn {
+      width: 34px; height: 34px; border-radius: 50%; border: 0.5px solid var(--border-md);
+      background: #f9fafb; font-size: 20px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; color: var(--text); transition: all .15s;
+    }
+    .pass-btn:hover { background: #E1F5EE; border-color: var(--accent); }
+    .pass-count { font-size: 22px; font-weight: 600; min-width: 32px; text-align: center; }
+
+    .booking-confirm {
+      background: #E1F5EE; border: 0.5px solid #5DCAA5;
+      border-radius: var(--radius-lg); padding: 1rem; margin-top: 8px; display: none;
+    }
+    .booking-confirm.show { display: block; }
+    .confirm-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+    .confirm-label { color: var(--muted); }
+    .confirm-val { font-weight: 600; color: var(--accent-h); }
+
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .s-new      { background: #E6F1FB; color: #185FA5; }
+    .s-accepted { background: #EAF3DE; color: #3B6D11; }
+    .s-done     { background: #f1f0eb; color: #5F5E5A; }
+    .s-pending  { background: #FAEEDA; color: #854F0B; }
+    .s-online   { background: #E1F5EE; color: #0F6E56; }
+    .s-busy     { background: #E6F1FB; color: #185FA5; }
+    .s-rejected { background: #fde8e8; color: #b91c1c; }
+
+    .trip-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 1rem; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .trip-route { font-size: 13px; font-weight: 600; }
+    .trip-meta  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .stat-box { background: #f9fafb; border-radius: var(--radius-md); padding: 12px; text-align: center; border: 0.5px solid var(--border); }
+    .stat-num { font-size: 22px; font-weight: 700; }
+    .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .c-green { color: var(--accent); }
+    .c-blue  { color: #185FA5; }
+    .c-amber { color: #BA7517; }
+    .c-red   { color: #b91c1c; }
+
+    .captain-trip {
+      background: var(--surface); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 1rem; margin-bottom: 10px;
+    }
+    .captain-trip-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .route-display { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
+    .route-display i { color: var(--accent); }
+    .trip-details-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .trip-detail { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+    .trip-detail i { font-size: 14px; }
+
+    .online-toggle {
+      display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #f9fafb;
+      border-radius: var(--radius-md); margin-bottom: 12px; cursor: pointer;
+      border: 0.5px solid var(--border); transition: border-color .2s;
+    }
+    .online-toggle:hover { border-color: var(--accent); }
+    .toggle-switch {
+      width: 44px; height: 24px; border-radius: 12px; background: #ccc;
+      position: relative; transition: background .2s; margin-right: auto; flex-shrink: 0;
+    }
+    .toggle-switch.on { background: var(--accent); }
+    .toggle-knob {
+      width: 18px; height: 18px; border-radius: 50%; background: white;
+      position: absolute; top: 3px; right: 3px;
+      transition: right .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .toggle-switch.on .toggle-knob { right: 23px; }
+    .toggle-label { font-size: 13px; font-weight: 600; }
+
+    .notification {
+      background: #FAEEDA; border: 0.5px solid #FAC775; border-radius: var(--radius-md);
+      padding: 10px 12px; font-size: 13px; color: #854F0B;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px; animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+    .section-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; color: var(--text); }
+    .section-title i { font-size: 17px; color: var(--accent); }
+
+    .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+
+    #booking-toast {
+      display: none; text-align: center; padding: 12px 16px; margin-top: 8px;
+      color: var(--accent-h); font-size: 14px; font-weight: 600;
+      background: #E1F5EE; border-radius: var(--radius-md); border: 0.5px solid #5DCAA5;
+    }
+
+    .captain-review-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 1rem; margin-bottom: 10px;
+    }
+    .captain-review-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .captain-review-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .captain-review-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .captain-review-docs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 10px; }
+    .doc-thumb {
+      background: #f4f3ef; border: 0.5px solid var(--border-md); border-radius: var(--radius-md);
+      padding: 8px; text-align: center; font-size: 11px; color: var(--muted);
+    }
+    .doc-thumb i { font-size: 20px; color: var(--accent); display: block; margin-bottom: 3px; }
+    .captain-review-actions { display: flex; gap: 8px; }
+
+    /* ════ PROFILE OVERLAY ════ */
+    #profile-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.45);
+      animation: overlayIn .2s ease;
+    }
+    #profile-overlay.open { display: flex; align-items: flex-start; justify-content: flex-end; }
+    @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .profile-drawer {
+      width: 100%; max-width: 400px; height: 100vh;
+      background: var(--bg); overflow-y: auto;
+      animation: drawerIn .25s ease;
+      display: flex; flex-direction: column;
+    }
+    @keyframes drawerIn {
+      from { transform: translateX(-30px); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+
+    html[dir="ltr"] .profile-drawer { animation-name: drawerInLTR; }
+    @keyframes drawerInLTR {
+      from { transform: translateX(30px); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+    html[dir="ltr"] #profile-overlay.open { justify-content: flex-end; }
+
+    .profile-header {
+      background: var(--surface); border-bottom: 0.5px solid var(--border);
+      padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .profile-header-title { font-size: 16px; font-weight: 700; color: var(--text); flex: 1; }
+    .profile-close-btn {
+      width: 32px; height: 32px; border-radius: 50%; background: #f4f3ef;
+      border: none; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: var(--muted); transition: all .15s;
+    }
+    .profile-close-btn:hover { background: #e8e7e3; color: var(--text); }
+
+    .profile-body { padding: 16px; flex: 1; }
+
+    .profile-avatar-section {
+      background: var(--surface); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 20px;
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: 12px; gap: 12px;
+    }
+    .profile-big-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: #E1F5EE; border: 3px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 700; color: var(--accent-h);
+      overflow: hidden; position: relative; cursor: pointer;
+      transition: opacity .15s;
+    }
+    .profile-big-avatar:hover { opacity: .85; }
+    .profile-big-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .profile-big-avatar .avatar-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.35);
+      display: none; align-items: center; justify-content: center;
+      border-radius: 50%; color: white; font-size: 20px;
+    }
+    .profile-big-avatar:hover .avatar-overlay { display: flex; }
+    .profile-avatar-input { display: none; }
+
+    .profile-name-display { font-size: 17px; font-weight: 700; color: var(--text); text-align: center; }
+    .profile-phone-display { font-size: 13px; color: var(--muted); text-align: center; direction: ltr; }
+    .profile-role-badge-wrap { display: flex; justify-content: center; }
+
+    .profile-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 16px;
+      margin-bottom: 12px;
+    }
+    .profile-card-title {
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .profile-card-title i { color: var(--accent); }
+
+    .profile-name-edit { display: flex; gap: 8px; }
+    .profile-name-edit input {
+      flex: 1; padding: 9px 12px; font-size: 14px; font-family: 'Cairo', sans-serif;
+      background: #f9fafb; border: 0.5px solid var(--border-md);
+      border-radius: var(--radius-md); color: var(--text); outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .profile-name-edit input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(29,158,117,.12); }
+    .profile-name-save-btn {
+      padding: 9px 16px; background: var(--accent); color: white; border: none;
+      border-radius: var(--radius-md); font-family: 'Cairo', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+      transition: background .15s;
+    }
+    .profile-name-save-btn:hover { background: var(--accent-h); }
+
+    .trip-history-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 0;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .trip-history-item:last-child { border-bottom: none; }
+    .trip-history-icon {
+      width: 34px; height: 34px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .trip-history-icon.done { background: #f1f0eb; }
+    .trip-history-icon.new  { background: #E6F1FB; }
+    .trip-history-icon.accepted { background: #EAF3DE; }
+    .trip-history-info { flex: 1; }
+    .trip-history-route { font-size: 13px; font-weight: 600; color: var(--text); }
+    .trip-history-meta  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .trip-history-price { font-size: 13px; font-weight: 700; color: var(--accent-h); }
+
+    .profile-lang-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 0;
+    }
+    .profile-lang-label { font-size: 14px; font-weight: 600; color: var(--text); }
+    .profile-lang-sub   { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .lang-switch-btn {
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+      background: #f4f3ef; border: 0.5px solid var(--border-md);
+      border-radius: 20px; cursor: pointer; font-family: 'Cairo', sans-serif;
+      font-size: 13px; font-weight: 700; color: var(--text); transition: all .18s;
+    }
+    .lang-switch-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .lang-switch-btn i { font-size: 16px; }
+
+    .profile-logout-btn {
+      width: 100%; padding: 12px; background: #fef2f2;
+      border: 0.5px solid #fca5a5; border-radius: var(--radius-md);
+      font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700;
+      color: #b91c1c; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 8px; transition: all .15s;
+      margin-top: 4px;
+    }
+    .profile-logout-btn:hover { background: #fee2e2; border-color: #f87171; }
+
+    /* ════ LTR overrides ════ */
+    html[dir="ltr"] body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    html[dir="ltr"] .field-input { direction: ltr; }
+    html[dir="ltr"] .phone-wrap input { direction: ltr; }
+    html[dir="ltr"] .toggle-switch { margin-right: 0; margin-left: auto; }
+    html[dir="ltr"] .toggle-knob { right: auto; left: 3px; }
+    html[dir="ltr"] .toggle-switch.on .toggle-knob { right: auto; left: 23px; }
+    html[dir="ltr"] .back-btn { flex-direction: row-reverse; }
+    html[dir="ltr"] .drop-item .drop-cat,
+    html[dir="ltr"] .drop-item .drop-badge-pop { margin-right: 0; margin-left: auto; }
+    html[dir="ltr"] .field-icon { right: auto; left: 11px; }
+    html[dir="ltr"] .clear-btn { left: auto; right: 10px; }
+    html[dir="ltr"] .field-input { padding: 9px 34px 9px 38px; }
+    html[dir="ltr"] .switch-row button { margin-right: 0; margin-left: 4px; }
+
+    .leaflet-container { font-family: 'Cairo', sans-serif; }
+    .leaflet-popup-content { font-family: 'Cairo', sans-serif; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════ AUTH LAYER ══════════════════════ -->
+<div id="auth-layer">
+  <button class="dark-toggle" id="auth-dark-btn" onclick="toggleDarkMode()" title="الوضع الليلي" style="position:fixed;top:14px;left:14px;z-index:10;">
+    <i class="ti ti-moon" id="auth-dark-icon"></i>
+  </button>
+  <div class="auth-card">
+    <div class="auth-logo"><i class="ti ti-car"></i></div>
+    <div class="auth-app-name" data-ar="تطبيق الحجز المسبق" data-en="Pre-Booking App">تطبيق الحجز المسبق</div>
+    <div class="auth-app-sub" data-ar="رحلتك في الموعد دايماً" data-en="Your ride, always on time">رحلتك في الموعد دايماً</div>
+
+    <div id="auth-main" class="auth-screen">
+      <div style="font-size:13px; font-weight:600; color:var(--muted); margin-bottom:8px;" data-ar="اختار نوع الحساب" data-en="Choose account type">اختار نوع الحساب</div>
+
+      <!-- ✅ فقط عميل + كابتن — الأدمن اتشال -->
+      <div class="role-select">
+        <button class="role-btn selected" id="role-customer" onclick="selectRole('customer')">
+          <i class="ti ti-user"></i> <span data-ar="عميل" data-en="Customer">عميل</span>
+        </button>
+        <button class="role-btn" id="role-captain" onclick="selectRole('captain')">
+          <i class="ti ti-steering-wheel"></i> <span data-ar="كابتن" data-en="Captain">كابتن</span>
+        </button>
+      </div>
+
+      <div class="tabs" id="tabs-row">
+        <button class="tab-btn active" id="tab-login" onclick="switchAuthTab('login')" data-ar="تسجيل دخول" data-en="Login">تسجيل دخول</button>
+        <button class="tab-btn" id="tab-signup" onclick="switchAuthTab('signup')" data-ar="إنشاء حساب" data-en="Sign Up">إنشاء حساب</button>
+      </div>
+
+      <div id="login-fields">
+        <p class="auth-title" id="login-title" data-ar="أهلاً بك" data-en="Welcome back">أهلاً بك</p>
+        <p class="auth-sub" id="login-sub" data-ar="سجّل دخولك للمتابعة" data-en="Sign in to continue">سجّل دخولك للمتابعة</p>
+        <div class="field" id="phone-field">
+          <label data-ar="رقم الموبايل أو اسم المستخدم" data-en="Mobile number or username">رقم الموبايل أو اسم المستخدم</label>
+          <div class="phone-wrap">
+            <div class="phone-prefix" id="phone-prefix-wrap">🇪🇬 +20</div>
+            <input type="text" id="login-phone" placeholder="01X XXXX XXXX" maxlength="20" oninput="checkLoginReady()" />
+          </div>
+        </div>
+        <div class="field">
+          <label id="pass-label" data-ar="كلمة المرور" data-en="Password">كلمة المرور</label>
+          <div style="position:relative;">
+            <input type="password" id="login-pass" placeholder="••••••••" oninput="checkLoginReady()" style="padding-left:40px;" />
+            <button type="button" onclick="togglePassVis('login-pass','eye-login')" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--hint);padding:0;line-height:1;display:flex;align-items:center;">
+              <i class="ti ti-eye" id="eye-login" style="font-size:17px;"></i>
+            </button>
+          </div>
+        </div>
+        <button class="submit-btn" id="login-btn" disabled onclick="doLogin()" data-ar="دخول" data-en="Login">دخول</button>
+        <div class="switch-row" id="signup-switch-row">
+          <span data-ar="ليس لديك حساب؟" data-en="Don't have an account?">ليس لديك حساب؟</span>
+          <button onclick="switchAuthTab('signup')" data-ar="أنشئ حساباً الآن" data-en="Create one now">أنشئ حساباً الآن</button>
+        </div>
+      </div>
+
+      <div id="signup-fields" style="display:none">
+        <p class="auth-title" data-ar="إنشاء حساب جديد" data-en="Create new account">إنشاء حساب جديد</p>
+        <p class="auth-sub" id="signup-sub" data-ar="أدخل بياناتك للتسجيل" data-en="Enter your details to register">أدخل بياناتك للتسجيل</p>
+        <div class="field">
+          <label data-ar="الاسم الكامل" data-en="Full name">الاسم الكامل</label>
+          <input type="text" id="signup-name" placeholder="مثال: عمر عنيم" oninput="checkSignupReady()" />
+        </div>
+        <div class="field">
+          <label data-ar="رقم الموبايل" data-en="Mobile number">رقم الموبايل</label>
+          <div class="phone-wrap">
+            <div class="phone-prefix">🇪🇬 +20</div>
+            <input type="tel" id="signup-phone" placeholder="01X XXXX XXXX" maxlength="11" oninput="checkSignupReady()" />
+          </div>
+        </div>
+        <div class="field">
+          <label data-ar="كلمة المرور" data-en="Password">كلمة المرور</label>
+          <div style="position:relative;">
+            <input type="password" id="signup-pass" placeholder="••••••••" oninput="checkSignupReady()" style="padding-left:40px;" />
+            <button type="button" onclick="togglePassVis('signup-pass','eye-signup')" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--hint);padding:0;line-height:1;display:flex;align-items:center;">
+              <i class="ti ti-eye" id="eye-signup" style="font-size:17px;"></i>
+            </button>
+          </div>
+        </div>
+        <button class="submit-btn" id="signup-btn" disabled onclick="doSignup()" data-ar="إرسال كود التأكيد" data-en="Send verification code">إرسال كود التأكيد</button>
+        <div class="switch-row">
+          <span data-ar="لديك حساب؟" data-en="Already have an account?">لديك حساب؟</span>
+          <button onclick="switchAuthTab('login')" data-ar="سجّل دخولك" data-en="Login">سجّل دخولك</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="auth-otp" style="display:none" class="auth-screen">
+      <button class="back-btn" onclick="goBackAuth()"><i class="ti ti-arrow-right"></i> <span data-ar="رجوع" data-en="Back">رجوع</span></button>
+      <p class="auth-title" data-ar="تأكيد رقم الموبايل" data-en="Verify mobile number">تأكيد رقم الموبايل</p>
+      <p class="otp-hint"><span data-ar="أدخل الكود المكوّن من 6 أرقام الذي تم إرساله إلى" data-en="Enter the 6-digit code sent to">أدخل الكود المكوّن من 6 أرقام الذي تم إرساله إلى</span> <strong id="otp-phone-display"></strong></p>
+      <div class="otp-inputs">
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+        <input type="tel" maxlength="1" class="otp-single" />
+      </div>
+      <div class="resend-row">
+        <span class="resend-timer" id="resend-timer"><span data-ar="إعادة الإرسال بعد" data-en="Resend in">إعادة الإرسال بعد</span> <strong id="countdown">60</strong><span data-ar="ث" data-en="s">ث</span></span>
+        <button class="resend-btn" id="resend-btn" onclick="resendOtp()" data-ar="إعادة إرسال الكود" data-en="Resend code">إعادة إرسال الكود</button>
+      </div>
+      <button class="submit-btn" id="otp-btn" disabled onclick="verifyOtp()" data-ar="تحقق من الكود" data-en="Verify code">تحقق من الكود</button>
+    </div>
+
+    <div id="auth-captain-verify" class="auth-screen">
+      <p class="auth-title" data-ar="🪪 توثيق حساب الكابتن" data-en="🪪 Captain Verification">🪪 توثيق حساب الكابتن</p>
+      <p class="auth-sub" data-ar="ارفع الصور المطلوبة عشان نوافق على حسابك" data-en="Upload required documents for account approval">ارفع الصور المطلوبة عشان نوافق على حسابك</p>
+      <div class="upload-field">
+        <label data-ar="صورة بطاقة الهوية" data-en="National ID photo">صورة بطاقة الهوية</label>
+        <div class="upload-box" id="box-id">
+          <input type="file" accept="image/*" onchange="markUploaded('box-id', 'doc-id', this)" />
+          <i class="ti ti-id"></i>
+          <div class="upload-text" data-ar="اضغط لرفع الصورة" data-en="Click to upload">اضغط لرفع الصورة</div>
+        </div>
+      </div>
+      <div class="upload-field">
+        <label data-ar="صورة العربية" data-en="Car photo">صورة العربية</label>
+        <div class="upload-box" id="box-car">
+          <input type="file" accept="image/*" onchange="markUploaded('box-car', 'doc-car', this)" />
+          <i class="ti ti-car"></i>
+          <div class="upload-text" data-ar="اضغط لرفع الصورة" data-en="Click to upload">اضغط لرفع الصورة</div>
+        </div>
+      </div>
+      <div class="field">
+        <label data-ar="رقم اللوحة" data-en="Plate number">رقم اللوحة</label>
+        <input type="text" id="plate-number" placeholder="مثال: أ ب ج 1234" oninput="checkVerifyReady()" />
+      </div>
+      <div class="upload-field">
+        <label data-ar="صورة رخصة السواقة" data-en="Driver's license">صورة رخصة السواقة</label>
+        <div class="upload-box" id="box-dlicense">
+          <input type="file" accept="image/*" onchange="markUploaded('box-dlicense', 'doc-dlicense', this)" />
+          <i class="ti ti-license"></i>
+          <div class="upload-text" data-ar="اضغط لرفع الصورة" data-en="Click to upload">اضغط لرفع الصورة</div>
+        </div>
+      </div>
+      <div class="upload-field">
+        <label data-ar="صورة رخصة العربية" data-en="Car license">صورة رخصة العربية</label>
+        <div class="upload-box" id="box-clicense">
+          <input type="file" accept="image/*" onchange="markUploaded('box-clicense', 'doc-clicense', this)" />
+          <i class="ti ti-file-certificate"></i>
+          <div class="upload-text" data-ar="اضغط لرفع الصورة" data-en="Click to upload">اضغط لرفع الصورة</div>
+        </div>
+      </div>
+      <button class="submit-btn" id="verify-btn" disabled onclick="submitCaptainVerify()" data-ar="إرسال للمراجعة" data-en="Submit for review">إرسال للمراجعة</button>
+    </div>
+
+    <div id="auth-pending" style="display:none" class="auth-screen">
+      <div class="pending-screen">
+        <div class="pending-icon"><i class="ti ti-clock-pause"></i></div>
+        <h3 style="font-size:17px; font-weight:700; color:var(--text); margin-bottom:8px;" data-ar="قيد الانتظار" data-en="Pending Review">قيد الانتظار</h3>
+        <p style="font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:1.5rem;" data-ar="تم إرسال بياناتك للأدمن للمراجعة.<br/>هيتم التواصل معاك بعد الموافقة." data-en="Your documents have been sent for admin review.<br/>You will be contacted after approval.">
+          تم إرسال بياناتك للأدمن للمراجعة.<br/>هيتم التواصل معاك بعد الموافقة.
+        </p>
+        <button class="submit-btn" onclick="doLogout()" style="background:#6b6a65;" data-ar="رجوع لتسجيل الدخول" data-en="Back to login">رجوع لتسجيل الدخول</button>
+      </div>
+    </div>
+
+    <div id="auth-success" style="display:none" class="auth-screen">
+      <div class="success-wrap">
+        <div class="success-icon"><i class="ti ti-check"></i></div>
+        <h3 id="success-title">تم التحقق بنجاح!</h3>
+        <p id="success-sub">مرحباً بك، يمكنك الآن الدخول إلى حسابك</p>
+        <button class="submit-btn" onclick="enterApp()" data-ar="الدخول إلى التطبيق ←" data-en="Enter App →">الدخول إلى التطبيق ←</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════ APP LAYER ══════════════════════ -->
+<div id="app-layer">
+
+  <div class="app-header">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="app-header-logo">
+        <span class="logo-dot"></span>
+        <span data-ar="حجز المشاوير" data-en="Ride Booking">حجز المشاوير</span>
+      </div>
+      <button class="dark-toggle" id="dark-toggle-btn" onclick="toggleDarkMode()" title="الوضع الليلي">
+        <i class="ti ti-moon" id="dark-icon"></i>
+      </button>
+    </div>
+    <button class="avatar-btn" onclick="openProfile()" id="header-avatar-btn" title="البروفايل">
+      <div class="user-avatar" id="header-avatar-wrap">
+        <span id="header-avatar-letter">م</span>
+      </div>
+      <div style="text-align:right;">
+        <div class="avatar-name" id="header-name">المستخدم</div>
+        <div class="role-badge customer" id="header-role-badge">عميل</div>
+      </div>
+      <i class="ti ti-chevron-left" style="font-size:14px;color:var(--hint);"></i>
+    </button>
+  </div>
+
+  <div class="main-tab-bar" id="main-tab-bar">
+    <div class="main-tab active" id="mtab-customer" onclick="switchMainTab('customer')"><i class="ti ti-user"></i> <span data-ar="العميل" data-en="Customer">العميل</span></div>
+    <div class="main-tab" id="mtab-captain" onclick="switchMainTab('captain')"><i class="ti ti-steering-wheel"></i> <span data-ar="الكابتن" data-en="Captain">الكابتن</span></div>
+    <div class="main-tab" id="mtab-admin" onclick="switchMainTab('admin')"><i class="ti ti-layout-dashboard"></i> <span data-ar="الأدمن" data-en="Admin">الأدمن</span></div>
+  </div>
+
+  <!-- ══════════════ CUSTOMER SCREEN ══════════════ -->
+  <div id="mscreen-customer" class="main-screen active">
+
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span style="display:flex;align-items:center;gap:6px;"><i class="ti ti-map-2"></i> <span data-ar="حدد الرحلة على الخريطة" data-en="Set trip on map">حدد الرحلة على الخريطة</span></span>
+        <button id="locate-btn" onclick="locateMe()" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;" onmouseover="this.style.background='var(--accent-h)'" onmouseout="this.style.background='var(--accent)'">
+          <i class="ti ti-current-location" style="font-size:15px;"></i> <span data-ar="موقعي الحالي" data-en="My location">موقعي الحالي</span>
+        </button>
+      </div>
+      <div style="position:relative;">
+        <div id="leaflet-map"></div>
+        <div id="locate-spinner" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.92);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--accent-h);font-weight:600;z-index:999;align-items:center;gap:8px;box-shadow:0 2px 12px rgba(0,0,0,.15);">
+          <i class="ti ti-loader-2" style="font-size:18px;animation:spin 1s linear infinite;"></i> <span data-ar="جاري تحديد موقعك…" data-en="Locating you…">جاري تحديد موقعك…</span>
+        </div>
+      </div>
+      <div class="map-status" id="map-status">
+        <span class="map-dot from"></span> <span data-ar="من:" data-en="From:">من:</span> <span id="ms-from" data-ar="لم يتم التحديد" data-en="Not set">لم يتم التحديد</span>
+        &nbsp;&nbsp;
+        <span class="map-dot to"></span> <span data-ar="إلى:" data-en="To:">إلى:</span> <span id="ms-to" data-ar="لم يتم التحديد" data-en="Not set">لم يتم التحديد</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">
+        <i class="ti ti-info-circle" style="font-size:13px;"></i>
+        <span data-ar="اضغط على الخريطة: أول ضغطة = نقطة الانطلاق، تانية = الوجهة" data-en="Click map: 1st click = start point, 2nd click = destination">اضغط على الخريطة: أول ضغطة = نقطة الانطلاق، تانية = الوجهة</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-route"></i> <span data-ar="تفاصيل الرحلة" data-en="Trip details">تفاصيل الرحلة</span></div>
+      <div class="field-row">
+        <div class="field-label" data-ar="من" data-en="From">من</div>
+        <div class="field-wrap">
+          <span class="field-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+          </span>
+          <input class="field-input" type="text" id="from-input" placeholder="ابحث عن منطقة الانطلاق…" autocomplete="off"
+            oninput="handleSearch(this,'from-dropdown','from-clear')"
+            onfocus="openDropdownFocus(this,'from-dropdown','from-clear')"
+            onblur="setTimeout(()=>closeDropdown('from-dropdown'),200)"
+            onkeydown="handleKey(event,'from-dropdown')" />
+          <button class="clear-btn" id="from-clear" onclick="clearField('from-input','from-dropdown','from-clear')"><i class="ti ti-x"></i></button>
+          <div class="search-dropdown" id="from-dropdown"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-label" data-ar="إلى" data-en="To">إلى</div>
+        <div class="field-wrap">
+          <span class="field-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 3h14l-3 5 3 5H5V3zm0 13v5" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <input class="field-input" type="text" id="to-input" placeholder="ابحث عن الوجهة…" autocomplete="off"
+            oninput="handleSearch(this,'to-dropdown','to-clear')"
+            onfocus="openDropdownFocus(this,'to-dropdown','to-clear')"
+            onblur="setTimeout(()=>closeDropdown('to-dropdown'),200)"
+            onkeydown="handleKey(event,'to-dropdown')" />
+          <button class="clear-btn" id="to-clear" onclick="clearField('to-input','to-dropdown','to-clear')"><i class="ti ti-x"></i></button>
+          <div class="search-dropdown" id="to-dropdown"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-clock"></i> <span data-ar="موعد المشوار" data-en="Trip time">موعد المشوار</span></div>
+      <div class="field-row">
+        <div class="field-label" data-ar="التاريخ" data-en="Date">التاريخ</div>
+        <input class="field-input" type="date" id="trip-date" style="padding:9px 12px;" />
+      </div>
+      <div class="field-row">
+        <div class="field-label" data-ar="الوقت" data-en="Time">الوقت</div>
+        <div class="time-picker-wrap">
+          <button class="time-picker-btn" id="tp-btn" onclick="toggleTimePicker()">
+            <i class="ti ti-clock tp-icon"></i>
+            <span class="tp-val" id="tp-display" data-ar="اختار الوقت" data-en="Pick a time">اختار الوقت</span>
+            <i class="ti ti-chevron-down tp-caret"></i>
+          </button>
+          <div class="time-picker-panel" id="tp-panel">
+            <div class="tp-period-row">
+              <button class="tp-period-btn active" id="tp-am" onclick="setPeriod('ص')" data-ar="صباحاً ص" data-en="AM">صباحاً ص</button>
+              <button class="tp-period-btn" id="tp-pm" onclick="setPeriod('م')" data-ar="مساءً م" data-en="PM">مساءً م</button>
+            </div>
+            <div class="tp-section-label" data-ar="الساعة" data-en="Hour">الساعة</div>
+            <div class="tp-hours-grid" id="tp-hours"></div>
+            <div class="tp-section-label" data-ar="الدقائق" data-en="Minutes">الدقائق</div>
+            <div class="tp-mins-grid" id="tp-mins"></div>
+            <button class="tp-confirm-btn" onclick="confirmTimePicker()" data-ar="تأكيد الوقت" data-en="Confirm time">تأكيد الوقت</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-users"></i> <span data-ar="عدد الأشخاص" data-en="Passengers">عدد الأشخاص</span></div>
+      <div class="passengers">
+        <button class="pass-btn" onclick="changePass(-1)">−</button>
+        <div class="pass-count" id="pass-count">2</div>
+        <button class="pass-btn" onclick="changePass(1)">+</button>
+        <div style="font-size:13px;color:var(--muted);margin-right:4px;" data-ar="شخص" data-en="person(s)">شخص</div>
+      </div>
+    </div>
+
+    <div id="booking-confirm-box" class="booking-confirm">
+      <div style="font-size:13px;font-weight:600;color:var(--accent-h);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        <i class="ti ti-check-circle"></i> <span data-ar="ملخص الحجز" data-en="Booking summary">ملخص الحجز</span>
+      </div>
+      <div class="confirm-row"><span class="confirm-label" data-ar="من" data-en="From">من</span><span class="confirm-val" id="conf-from">-</span></div>
+      <div class="confirm-row"><span class="confirm-label" data-ar="إلى" data-en="To">إلى</span><span class="confirm-val" id="conf-to">-</span></div>
+      <div class="confirm-row"><span class="confirm-label" data-ar="الموعد" data-en="Time">الموعد</span><span class="confirm-val" id="conf-time">-</span></div>
+      <div class="confirm-row"><span class="confirm-label" data-ar="الأشخاص" data-en="Passengers">الأشخاص</span><span class="confirm-val" id="conf-pass">-</span></div>
+      <div class="confirm-row" style="border-top:0.5px solid #5DCAA5;margin-top:6px;padding-top:8px;">
+        <span class="confirm-label" data-ar="السعر التقريبي" data-en="Est. price">السعر التقريبي</span>
+        <span class="confirm-val" id="conf-price">-</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="confirmBooking()">
+      <i class="ti ti-calendar-check"></i> <span data-ar="تأكيد الحجز المسبق" data-en="Confirm booking">تأكيد الحجز المسبق</span>
+    </button>
+    <div id="booking-toast">
+      <i class="ti ti-circle-check"></i> <span data-ar="تم إرسال الحجز بنجاح! سيتواصل معك الكابتن قريباً" data-en="Booking sent! Your captain will contact you soon">تم إرسال الحجز بنجاح! سيتواصل معك الكابتن قريباً</span>
+    </div>
+  </div>
+
+  <!-- ══════════════ CAPTAIN SCREEN ══════════════ -->
+  <div id="mscreen-captain" class="main-screen">
+    <div class="online-toggle" onclick="toggleOnline()">
+      <i class="ti ti-car" style="font-size:22px;color:var(--accent);"></i>
+      <div>
+        <div class="toggle-label" id="online-label" data-ar="أنت أوفلاين" data-en="You're offline">أنت أوفلاين</div>
+        <div style="font-size:11px;color:var(--muted);" data-ar="اضغط لتغيير الحالة" data-en="Tap to change status">اضغط لتغيير الحالة</div>
+      </div>
+      <div class="toggle-switch" id="online-toggle-sw"><div class="toggle-knob"></div></div>
+    </div>
+
+    <div id="new-trip-notif" class="notification" style="display:none;">
+      <i class="ti ti-bell-ringing" style="font-size:18px;flex-shrink:0;"></i>
+      <div style="flex:1;">
+        <div style="font-weight:600;" data-ar="طلب رحلة جديد!" data-en="New trip request!">طلب رحلة جديد!</div>
+        <div style="font-size:11px;margin-top:2px;" id="notif-details">من المعادي إلى مدينة نصر • 8:00 م • 3 أشخاص</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-primary btn-sm" onclick="acceptTrip()" data-ar="قبول" data-en="Accept">قبول</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('new-trip-notif').style.display='none'" data-ar="رفض" data-en="Decline">رفض</button>
+      </div>
+    </div>
+
+    <div class="section-title"><i class="ti ti-list-check"></i> <span data-ar="رحلاتي اليوم" data-en="Today's trips">رحلاتي اليوم</span></div>
+
+    <div class="captain-trip" id="active-trip" style="display:none;border-color:#5DCAA5;">
+      <div class="captain-trip-header">
+        <div class="route-display"><i class="ti ti-route"></i> <span id="active-route">المعادي → مدينة نصر</span></div>
+        <span class="status-badge s-accepted" data-ar="مقبولة" data-en="Accepted">مقبولة</span>
+      </div>
+      <div class="trip-details-row">
+        <div class="trip-detail"><i class="ti ti-clock"></i> <span id="active-time">8:00 م</span></div>
+        <div class="trip-detail"><i class="ti ti-users"></i> <span id="active-pass">3 أشخاص</span></div>
+        <div class="trip-detail"><i class="ti ti-cash"></i> <span id="active-price">~85 جنيه</span></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="completeTrip()"><i class="ti ti-check"></i> <span data-ar="إنهاء الرحلة" data-en="Complete trip">إنهاء الرحلة</span></button>
+        <button class="btn btn-outline btn-sm"><i class="ti ti-phone"></i> <span data-ar="اتصال" data-en="Call">اتصال</span></button>
+      </div>
+    </div>
+
+    <div class="captain-trip">
+      <div class="captain-trip-header">
+        <div class="route-display"><i class="ti ti-route"></i> الهرم → وسط البلد</div>
+        <span class="status-badge s-done" data-ar="منتهية" data-en="Done">منتهية</span>
+      </div>
+      <div class="trip-details-row">
+        <div class="trip-detail"><i class="ti ti-clock"></i> 2:00 م</div>
+        <div class="trip-detail"><i class="ti ti-users"></i> 1 شخص</div>
+        <div class="trip-detail"><i class="ti ti-cash"></i> 60 جنيه</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-top:4px;">
+      <div class="stat-box"><div class="stat-num c-green" id="capt-trips">1</div><div class="stat-lbl" data-ar="رحلات اليوم" data-en="Trips today">رحلات اليوم</div></div>
+      <div class="stat-box"><div class="stat-num c-amber" id="capt-earn">60</div><div class="stat-lbl" data-ar="الأرباح (جنيه)" data-en="Earnings (EGP)">الأرباح (جنيه)</div></div>
+      <div class="stat-box"><div class="stat-num c-blue">4.9</div><div class="stat-lbl" data-ar="التقييم" data-en="Rating">التقييم</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ ADMIN SCREEN ══════════════ -->
+  <div id="mscreen-admin" class="main-screen">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num c-green" id="admin-bookings">7</div><div class="stat-lbl" data-ar="حجز اليوم" data-en="Today's bookings">حجز اليوم</div></div>
+      <div class="stat-box"><div class="stat-num c-blue">3</div><div class="stat-lbl" data-ar="كابتن أونلاين" data-en="Online captains">كابتن أونلاين</div></div>
+      <div class="stat-box"><div class="stat-num c-amber" id="pending-captains-count">2</div><div class="stat-lbl" data-ar="كابتن قيد المراجعة" data-en="Pending review">كابتن قيد المراجعة</div></div>
+    </div>
+
+    <div class="section-title"><i class="ti ti-user-check"></i> <span data-ar="طلبات توثيق الكباتن" data-en="Captain verification requests">طلبات توثيق الكباتن</span></div>
+    <div id="captain-verify-list">
+      <div class="captain-review-card" id="capt-req-demo1">
+        <div class="captain-review-header">
+          <div>
+            <div class="captain-review-name">خالد عبدالعزيز</div>
+            <div class="captain-review-meta">📱 01012345678 • رقم اللوحة: أ ب ج 1234</div>
+          </div>
+          <span class="status-badge s-pending" data-ar="قيد المراجعة" data-en="Pending">قيد المراجعة</span>
+        </div>
+        <div class="captain-review-docs">
+          <div class="doc-thumb"><i class="ti ti-id"></i><span data-ar="بطاقة الهوية" data-en="National ID">بطاقة الهوية</span></div>
+          <div class="doc-thumb"><i class="ti ti-car"></i><span data-ar="صورة العربية" data-en="Car photo">صورة العربية</span></div>
+          <div class="doc-thumb"><i class="ti ti-license"></i><span data-ar="رخصة السواقة" data-en="Driver license">رخصة السواقة</span></div>
+          <div class="doc-thumb"><i class="ti ti-file-certificate"></i><span data-ar="رخصة العربية" data-en="Car license">رخصة العربية</span></div>
+        </div>
+        <div class="captain-review-actions">
+          <button class="btn btn-success btn-sm" style="flex:1;" onclick="approveCapt('capt-req-demo1')"><i class="ti ti-check"></i> <span data-ar="موافقة" data-en="Approve">موافقة</span></button>
+          <button class="btn btn-danger btn-sm" style="flex:1;" onclick="rejectCapt('capt-req-demo1')"><i class="ti ti-x"></i> <span data-ar="رفض" data-en="Reject">رفض</span></button>
+        </div>
+      </div>
+      <div class="captain-review-card" id="capt-req-demo2">
+        <div class="captain-review-header">
+          <div>
+            <div class="captain-review-name">ياسر إبراهيم</div>
+            <div class="captain-review-meta">📱 01098765432 • رقم اللوحة: د هـ و 5678</div>
+          </div>
+          <span class="status-badge s-pending" data-ar="قيد المراجعة" data-en="Pending">قيد المراجعة</span>
+        </div>
+        <div class="captain-review-docs">
+          <div class="doc-thumb"><i class="ti ti-id"></i><span data-ar="بطاقة الهوية" data-en="National ID">بطاقة الهوية</span></div>
+          <div class="doc-thumb"><i class="ti ti-car"></i><span data-ar="صورة العربية" data-en="Car photo">صورة العربية</span></div>
+          <div class="doc-thumb"><i class="ti ti-license"></i><span data-ar="رخصة السواقة" data-en="Driver license">رخصة السواقة</span></div>
+          <div class="doc-thumb"><i class="ti ti-file-certificate"></i><span data-ar="رخصة العربية" data-en="Car license">رخصة العربية</span></div>
+        </div>
+        <div class="captain-review-actions">
+          <button class="btn btn-success btn-sm" style="flex:1;" onclick="approveCapt('capt-req-demo2')"><i class="ti ti-check"></i> <span data-ar="موافقة" data-en="Approve">موافقة</span></button>
+          <button class="btn btn-danger btn-sm" style="flex:1;" onclick="rejectCapt('capt-req-demo2')"><i class="ti ti-x"></i> <span data-ar="رفض" data-en="Reject">رفض</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:8px;"><i class="ti ti-calendar-event"></i> <span data-ar="الحجوزات المسبقة" data-en="Pre-bookings">الحجوزات المسبقة</span></div>
+    <div id="admin-trips">
+      <div class="trip-card">
+        <div style="flex:1;"><div class="trip-route">الشيخ زايد → التجمع الخامس</div><div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> اليوم 8:00 م • 3 أشخاص • عمر غنيم</div></div>
+        <span class="status-badge s-new" data-ar="جديد" data-en="New">جديد</span>
+      </div>
+      <div class="trip-card">
+        <div style="flex:1;"><div class="trip-route">أكتوبر → مطار القاهرة</div><div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> غداً 6:00 ص • 2 شخص • سارة علي</div></div>
+        <span class="status-badge s-pending" data-ar="معلق" data-en="Pending">معلق</span>
+      </div>
+      <div class="trip-card">
+        <div style="flex:1;"><div class="trip-route">زايد → مدينة نصر</div><div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> اليوم 4:00 م • 1 شخص • محمود حسن</div></div>
+        <span class="status-badge s-accepted" data-ar="مقبول" data-en="Accepted">مقبول</span>
+      </div>
+      <div class="trip-card">
+        <div style="flex:1;"><div class="trip-route">أكتوبر → وسط البلد</div><div class="trip-meta"><i class="ti ti-clock" style="font-size:12px;"></i> اليوم 2:00 م • 4 أشخاص • فاطمة كريم</div></div>
+        <span class="status-badge s-done" data-ar="منتهي" data-en="Done">منتهي</span>
+      </div>
+    </div>
+
+    <div class="section-title"><i class="ti ti-users"></i> <span data-ar="الكباتن المتاحين" data-en="Available captains">الكباتن المتاحين</span></div>
+    <div class="trip-card">
+      <div class="avatar" style="background:#E1F5EE;color:#0F6E56;">مح</div>
+      <div style="flex:1;"><div class="trip-route">محمد سيد</div><div class="trip-meta">تويوتا كامري • أبيض • ⭐ 4.8</div></div>
+      <span class="status-badge s-online" data-ar="متاح" data-en="Available">متاح</span>
+    </div>
+    <div class="trip-card">
+      <div class="avatar" style="background:#E6F1FB;color:#185FA5;">عم</div>
+      <div style="flex:1;"><div class="trip-route">عمر غنيم</div><div class="trip-meta">هيونداي إلنترا • أسود • ⭐ 4.9</div></div>
+      <span class="status-badge s-busy" data-ar="في رحلة" data-en="On trip">في رحلة</span>
+    </div>
+  </div>
+
+</div><!-- /app-layer -->
+
+
+<!-- ══════════════════════ PROFILE OVERLAY ══════════════════════ -->
+<div id="profile-overlay" onclick="handleOverlayClick(event)">
+  <div class="profile-drawer" id="profile-drawer">
+
+    <div class="profile-header">
+      <button class="profile-close-btn" onclick="closeProfile()">
+        <i class="ti ti-x" style="font-size:16px;"></i>
+      </button>
+      <div class="profile-header-title" data-ar="الملف الشخصي" data-en="My Profile">الملف الشخصي</div>
+    </div>
+
+    <div class="profile-body">
+
+      <div class="profile-avatar-section">
+        <div class="profile-big-avatar" onclick="document.getElementById('profile-img-input').click()">
+          <span id="profile-avatar-letter-big">م</span>
+          <div class="avatar-overlay"><i class="ti ti-camera"></i></div>
+        </div>
+        <input type="file" accept="image/*" id="profile-img-input" class="profile-avatar-input" onchange="handleProfileImage(this)" />
+        <div class="profile-name-display" id="profile-name-display">المستخدم</div>
+        <div class="profile-phone-display" id="profile-phone-display">—</div>
+        <div class="profile-role-badge-wrap">
+          <span class="role-badge customer" id="profile-role-badge">عميل</span>
+        </div>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-card-title"><i class="ti ti-pencil"></i> <span data-ar="تغيير الاسم" data-en="Change name">تغيير الاسم</span></div>
+        <div class="profile-name-edit">
+          <input type="text" id="profile-name-input" placeholder="اكتب الاسم الجديد…" />
+          <button class="profile-name-save-btn" onclick="saveName()" data-ar="حفظ" data-en="Save">حفظ</button>
+        </div>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-card-title"><i class="ti ti-history"></i> <span data-ar="سجل رحلاتي" data-en="My trip history">سجل رحلاتي</span></div>
+        <div id="profile-trips-list"></div>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-card-title"><i class="ti ti-world"></i> <span data-ar="اللغة" data-en="Language">اللغة</span></div>
+        <div class="profile-lang-row">
+          <div>
+            <div class="profile-lang-label" id="profile-lang-label">العربية</div>
+            <div class="profile-lang-sub" id="profile-lang-sub">اضغط لتغيير اللغة</div>
+          </div>
+          <button class="lang-switch-btn" onclick="toggleLang()">
+            <i class="ti ti-language"></i>
+            <span id="profile-lang-btn-text">English</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="profile-logout-btn" onclick="doLogout()">
+        <i class="ti ti-logout"></i>
+        <span data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</span>
+      </button>
+
+    </div>
+  </div>
+</div>
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+
+<script>
+/* ══════════════════════════════════
+   LANGUAGE SYSTEM
+══════════════════════════════════ */
+let currentLang = 'ar';
+
+function toggleLang() {
+  currentLang = currentLang === 'ar' ? 'en' : 'ar';
+  applyLang();
+}
+
+function applyLang() {
+  const isEn = currentLang === 'en';
+  const html  = document.documentElement;
+  html.setAttribute('lang', currentLang);
+  html.setAttribute('dir', isEn ? 'ltr' : 'rtl');
+
+  document.querySelectorAll('[data-ar][data-en]').forEach(el => {
+    const val = el.getAttribute('data-' + currentLang);
+    if (!val) return;
+    if (el.tagName === 'INPUT') {
+      el.placeholder = val;
+    } else if (['BUTTON','LABEL','P','H3','SPAN','DIV'].includes(el.tagName)) {
+      el.innerHTML = val;
+    } else {
+      el.textContent = val;
+    }
+  });
+
+  const fromInp = document.getElementById('from-input');
+  const toInp   = document.getElementById('to-input');
+  if (fromInp) fromInp.placeholder = isEn ? 'Search departure area…' : 'ابحث عن منطقة الانطلاق…';
+  if (toInp)   toInp.placeholder   = isEn ? 'Search destination…'    : 'ابحث عن الوجهة…';
+
+  const tpDisp = document.getElementById('tp-display');
+  if (tpDisp && (tpDisp.textContent === 'اختار الوقت' || tpDisp.textContent === 'Pick a time')) {
+    tpDisp.textContent = isEn ? 'Pick a time' : 'اختار الوقت';
+  }
+
+  const onlineLabel = document.getElementById('online-label');
+  if (onlineLabel) {
+    const sw = document.getElementById('online-toggle-sw');
+    onlineLabel.textContent = sw && sw.classList.contains('on')
+      ? (isEn ? "You're online" : 'أنت أونلاين')
+      : (isEn ? "You're offline" : 'أنت أوفلاين');
+  }
+
+  const plbl = document.getElementById('profile-lang-label');
+  const psub = document.getElementById('profile-lang-sub');
+  const pbtn = document.getElementById('profile-lang-btn-text');
+  if (plbl) plbl.textContent = isEn ? 'English' : 'العربية';
+  if (psub) psub.textContent = isEn ? 'Tap to change language' : 'اضغط لتغيير اللغة';
+  if (pbtn) pbtn.textContent = isEn ? 'عربي' : 'English';
+
+  const chev = document.querySelector('#header-avatar-btn .ti-chevron-left, #header-avatar-btn .ti-chevron-right');
+  if (chev) {
+    chev.className = isEn ? 'ti ti-chevron-right' : 'ti ti-chevron-left';
+    chev.style.fontSize = '14px';
+    chev.style.color = 'var(--hint)';
+  }
+
+  const pni = document.getElementById('profile-name-input');
+  if (pni) pni.placeholder = isEn ? 'Enter new name…' : 'اكتب الاسم الجديد…';
+}
+
+/* ══════════════════════════════════
+   PLACES DATA
+══════════════════════════════════ */
+const PLACES = [
+  {name:'مدينة نصر',       icon:'ti-building',           cat:'القاهرة'},
+  {name:'المهندسين',       icon:'ti-building-skyscraper', cat:'الجيزة'},
+  {name:'الدقي',           icon:'ti-map-pin',             cat:'الجيزة'},
+  {name:'وسط البلد',       icon:'ti-building-arch',       cat:'القاهرة'},
+  {name:'التجمع الخامس',   icon:'ti-building-community',  cat:'القاهرة الجديدة'},
+  {name:'مطار القاهرة',    icon:'ti-plane',               cat:'القاهرة'},
+  {name:'الجيزة',          icon:'ti-pyramid',             cat:'الجيزة'},
+  {name:'الهرم',           icon:'ti-pyramid',             cat:'الجيزة'},
+  {name:'العجوزة',         icon:'ti-map-pin',             cat:'الجيزة'},
+  {name:'إمبابة',          icon:'ti-map-pin',             cat:'الجيزة'},
+  {name:'الشيخ زايد',     icon:'ti-building-community',  cat:'الشيخ زايد'},
+  {name:'أكتوبر',          icon:'ti-map-pin',             cat:'أكتوبر'},
+  {name:'المعادي',         icon:'ti-map-pin',             cat:'القاهرة'},
+  {name:'حلوان',           icon:'ti-map-pin',             cat:'القاهرة'},
+  {name:'شبرا',            icon:'ti-map-pin',             cat:'القاهرة'},
+  {name:'مصر الجديدة',    icon:'ti-building',            cat:'القاهرة'},
+  {name:'المنيل',          icon:'ti-map-pin',             cat:'القاهرة'},
+  {name:'الزمالك',         icon:'ti-map-pin',             cat:'القاهرة'},
+  {name:'عين شمس',         icon:'ti-map-pin',             cat:'القاهرة'},
+  {name:'المرج',           icon:'ti-map-pin',             cat:'القاهرة'},
+  {name:'الرحاب',          icon:'ti-building-community',  cat:'القاهرة الجديدة'},
+  {name:'الشروق',          icon:'ti-map-pin',             cat:'القاهرة الجديدة'},
+  {name:'العبور',          icon:'ti-map-pin',             cat:'القاهرة الجديدة'},
+  {name:'بدر',             icon:'ti-map-pin',             cat:'القاهرة الجديدة'},
+  {name:'القطامية',        icon:'ti-map-pin',             cat:'القاهرة الجديدة'},
+  {name:'السادس من أكتوبر',icon:'ti-map-pin',            cat:'أكتوبر'},
+  {name:'فيصل',            icon:'ti-map-pin',             cat:'الجيزة'},
+  {name:'الهضبة الوسطى',  icon:'ti-map-pin',             cat:'القاهرة'},
+  {name:'المقطم',          icon:'ti-mountain',            cat:'القاهرة'},
+  {name:'الإسكندرية',     icon:'ti-anchor',              cat:'الإسكندرية'},
+];
+
+const POPULAR = ['مطار القاهرة','التجمع الخامس','مدينة نصر','الهرم','وسط البلد','المعادي','الشيخ زايد','الزمالك'];
+
+function norm(s) {
+  return s.replace(/ة/g,'ه').replace(/أ|إ|آ/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();
+}
+function searchPlaces(q) {
+  if (!q) return PLACES.slice(0, 8);
+  const nq = norm(q);
+  const starts   = PLACES.filter(p =>  norm(p.name).startsWith(nq));
+  const includes = PLACES.filter(p => !norm(p.name).startsWith(nq) && norm(p.name).includes(nq));
+  return [...starts, ...includes].slice(0, 8);
+}
+function highlight(text, query) {
+  if (!query) return text;
+  const nText = norm(text), nQ = norm(query);
+  const idx = nText.indexOf(nQ);
+  if (idx < 0) return text;
+  return text.slice(0,idx) + '<span class="match">' + text.slice(idx, idx+nQ.length) + '</span>' + text.slice(idx+nQ.length);
+}
+
+function openDropdownFocus(inp, ddId, clearId) {
+  const q = inp.value.trim();
+  if (!q) { renderDropdownWithPopular(ddId, inp, clearId); }
+  else    { handleSearch(inp, ddId, clearId); }
+}
+function renderDropdownWithPopular(ddId, inp, clearId) {
+  const dd = document.getElementById(ddId);
+  dd.innerHTML = '';
+  const hdr = document.createElement('div');
+  hdr.className = 'drop-section-label';
+  hdr.innerHTML = '🔥 ' + (currentLang === 'en' ? 'Popular destinations' : 'وجهات شائعة');
+  dd.appendChild(hdr);
+  POPULAR.map(n => PLACES.find(p => p.name === n)).filter(Boolean).forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'drop-item';
+    el.innerHTML = `<i class="ti ${p.icon}"></i><span>${p.name}</span><span class="drop-badge-pop">🔥 ${currentLang==='en'?'Popular':'شائع'}</span>`;
+    el.onmousedown = () => { inp.value = p.name; document.getElementById(clearId).classList.add('show'); closeDropdown(ddId); };
+    dd.appendChild(el);
+  });
+  dd.classList.add('open');
+}
+function handleSearch(inp, ddId, clearId) {
+  const q = inp.value.trim();
+  document.getElementById(clearId).classList.toggle('show', q.length > 0);
+  if (!q) { renderDropdownWithPopular(ddId, inp, clearId); return; }
+  const dd = document.getElementById(ddId);
+  const results = searchPlaces(q);
+  dd.innerHTML = '';
+  if (!results.length) {
+    dd.innerHTML = `<div class="drop-empty">🔍 ${currentLang==='en'?'No results':'مش لاقي نتيجة'}</div>`;
+  } else {
+    const hdr = document.createElement('div');
+    hdr.className = 'drop-section-label';
+    hdr.innerHTML = `🔍 ${currentLang==='en'?'Search results':'نتائج البحث'}`;
+    dd.appendChild(hdr);
+    results.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'drop-item';
+      el.innerHTML = `<i class="ti ${p.icon}"></i><span>${highlight(p.name,q)}</span><span class="drop-cat">${p.cat}</span>`;
+      el.onmousedown = () => { inp.value = p.name; document.getElementById(clearId).classList.add('show'); closeDropdown(ddId); };
+      dd.appendChild(el);
+    });
+  }
+  dd.classList.add('open');
+}
+function closeDropdown(ddId) { document.getElementById(ddId).classList.remove('open'); }
+function clearField(inpId, ddId, clearId) {
+  document.getElementById(inpId).value = '';
+  document.getElementById(clearId).classList.remove('show');
+  closeDropdown(ddId);
+  document.getElementById(inpId).focus();
+}
+function handleKey(e, ddId) {
+  const dd = document.getElementById(ddId);
+  const items = dd.querySelectorAll('.drop-item');
+  if (!items.length) return;
+  let focused = dd.querySelector('.drop-item.focused');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (!focused) items[0].classList.add('focused');
+    else { focused.classList.remove('focused'); const nx = focused.nextElementSibling; if (nx && nx.classList.contains('drop-item')) nx.classList.add('focused'); else items[0].classList.add('focused'); }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!focused) items[items.length-1].classList.add('focused');
+    else { focused.classList.remove('focused'); const pv = focused.previousElementSibling; if (pv && pv.classList.contains('drop-item')) pv.classList.add('focused'); else items[items.length-1].classList.add('focused'); }
+  } else if (e.key === 'Enter' && focused) {
+    focused.onmousedown();
+  } else if (e.key === 'Escape') {
+    closeDropdown(ddId);
+  }
+}
+
+/* ══════════════════════════════════
+   CUSTOM TIME PICKER
+══════════════════════════════════ */
+let tpPeriod = 'ص', tpHour = null, tpMin = null, tpOpen = false;
+
+function buildTimePicker() {
+  const hGrid = document.getElementById('tp-hours');
+  hGrid.innerHTML = '';
+  for (let h = 1; h <= 12; h++) {
+    const btn = document.createElement('button');
+    btn.className = 'tp-hour-btn'; btn.textContent = h; btn.dataset.h = h;
+    btn.onclick = () => { hGrid.querySelectorAll('.tp-hour-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); tpHour = h; };
+    hGrid.appendChild(btn);
+  }
+  const mGrid = document.getElementById('tp-mins');
+  mGrid.innerHTML = '';
+  [0,15,30,45].forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'tp-min-btn'; btn.textContent = m === 0 ? '00' : m; btn.dataset.m = m;
+    btn.onclick = () => { mGrid.querySelectorAll('.tp-min-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); tpMin = m; };
+    mGrid.appendChild(btn);
+  });
+}
+function setPeriod(p) {
+  tpPeriod = p;
+  document.getElementById('tp-am').classList.toggle('active', p === 'ص');
+  document.getElementById('tp-pm').classList.toggle('active', p === 'م');
+}
+function toggleTimePicker() {
+  tpOpen = !tpOpen;
+  document.getElementById('tp-panel').classList.toggle('open', tpOpen);
+  document.getElementById('tp-btn').classList.toggle('open', tpOpen);
+  if (tpOpen) buildTimePicker();
+}
+function closeTimePicker() {
+  tpOpen = false;
+  document.getElementById('tp-panel').classList.remove('open');
+  document.getElementById('tp-btn').classList.remove('open');
+}
+function confirmTimePicker() {
+  if (tpHour === null) { alert(currentLang==='en'?'Please select an hour first':'اختار الساعة أولاً'); return; }
+  if (tpMin  === null) { alert(currentLang==='en'?'Please select minutes first':'اختار الدقائق أولاً'); return; }
+  const minStr  = tpMin === 0 ? '00' : tpMin;
+  const display = tpHour + ':' + minStr + ' ' + tpPeriod;
+  document.getElementById('tp-display').textContent = display;
+  selectedTime = display;
+  closeTimePicker();
+}
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.time-picker-wrap');
+  if (wrap && !wrap.contains(e.target)) closeTimePicker();
+});
+
+/* ══════════════════════════════════
+   AUTH STATE
+══════════════════════════════════ */
+// ✅ بيانات الأدمن السرية
+const ADMIN_SECRET_USER = 'OMAR1';
+const ADMIN_SECRET_PASS = '01000075176';
+
+const registeredUsers = {};
+const captainDocs = { 'box-id': false, 'box-car': false, 'box-dlicense': false, 'box-clicense': false };
+
+let authTab      = 'login';
+let selectedRole = 'customer';
+let currentPhone = '';
+let timerInterval = null;
+let loggedInUser = { name: 'المستخدم', role: 'customer', phone: '' };
+let userTrips    = [];
+let profileImgDataUrl = null;
+
+function selectRole(role) {
+  selectedRole = role;
+  ['customer','captain'].forEach(r => document.getElementById('role-'+r).classList.toggle('selected', r===role));
+  document.getElementById('login-fields').style.display  = 'block';
+  document.getElementById('signup-fields').style.display = 'none';
+
+  const isEn = currentLang === 'en';
+  document.getElementById('login-title').textContent = isEn ? 'Welcome back' : 'أهلاً بك';
+  document.getElementById('login-sub').textContent   = isEn ? 'Sign in to continue' : 'سجّل دخولك للمتابعة';
+  document.getElementById('phone-field').style.display = 'flex';
+  document.getElementById('pass-label').textContent    = isEn ? 'Password' : 'كلمة المرور';
+  document.getElementById('login-pass').placeholder    = '••••••••';
+  document.getElementById('login-btn').textContent     = isEn ? 'Login' : 'دخول';
+  document.getElementById('login-pass').value  = '';
+  document.getElementById('login-phone').value = '';
+  checkLoginReady();
+}
+
+function switchAuthTab(tab) {
+  authTab = tab;
+  document.getElementById('tab-login').classList.toggle('active',  tab==='login');
+  document.getElementById('tab-signup').classList.toggle('active', tab==='signup');
+  document.getElementById('login-fields').style.display  = tab==='login'  ? 'block' : 'none';
+  document.getElementById('signup-fields').style.display = tab==='signup' ? 'block' : 'none';
+}
+
+function checkLoginReady() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const pass  = document.getElementById('login-pass').value.trim();
+  // ✅ قبول اسم المستخدم القصير زي OMAR1 أو رقم موبايل
+  document.getElementById('login-btn').disabled = !(phone.length >= 4 && pass.length >= 4);
+}
+
+function checkSignupReady() {
+  const name  = document.getElementById('signup-name').value.trim();
+  const phone = document.getElementById('signup-phone').value.trim();
+  const pass  = document.getElementById('signup-pass').value.trim();
+  document.getElementById('signup-btn').disabled = !(name.length >= 2 && phone.length >= 10 && pass.length >= 4);
+}
+
+function doLogin() {
+  const isEn    = currentLang === 'en';
+  const phoneVal = document.getElementById('login-phone').value.trim();
+  const pass     = document.getElementById('login-pass').value.trim();
+
+  // ✅ فحص بيانات الأدمن السرية أولاً
+  if (phoneVal === ADMIN_SECRET_USER && pass === ADMIN_SECRET_PASS) {
+    loggedInUser = { name: 'OMAR1', role: 'admin', phone: '' };
+    showSuccessScreen(
+      isEn ? 'Admin login successful!' : 'تم تسجيل دخول الأدمن!',
+      isEn ? 'Welcome to the dashboard' : 'مرحباً بك في لوحة التحكم'
+    );
+    return;
+  }
+
+  // دخول عادي بالموبايل
+  const fullPhone = '+20' + phoneVal;
+  const stored    = registeredUsers[fullPhone];
+  if (!stored) { showFieldError('login-phone', isEn?'Number not registered, please sign up first':'الرقم غير مسجل، أنشئ حساباً أولاً'); return; }
+  if (stored.pass !== pass) { showFieldError('login-pass', isEn?'Incorrect password!':'كلمة المرور غير صحيحة!'); return; }
+  if (stored.role !== selectedRole) { showFieldError('login-phone', isEn?'This account is registered as '+roleLabel(stored.role):'هذا الحساب مسجل كـ '+roleLabel(stored.role)); return; }
+  if (stored.role==='captain' && stored.status==='pending')  { showPendingScreen(); return; }
+  if (stored.role==='captain' && stored.status==='rejected') { showFieldError('login-phone', isEn?'Your verification was rejected':'تم رفض طلب التوثيق'); return; }
+  currentPhone = fullPhone;
+  loggedInUser = { name: stored.name, role: stored.role, phone: fullPhone };
+  showOtpScreen();
+}
+
+async function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  let phone = document.getElementById('signup-phone').value.trim();
+  const password = document.getElementById('signup-pass').value.trim();
+  const isEn = currentLang === 'en';
+  if (!name || !phone || !password) {
+    alert(isEn ? 'Please fill in all fields' : 'اكمل كل البيانات');
+    return;
+  }
+  // إزالة أي مسافات
+  phone = phone.replace(/\s+/g, '');
+  // تحويل 01xxxxxxxxx → 201xxxxxxxxx
+  if (phone.startsWith('0')) {
+    phone = '2' + phone;
+  }
+  const fullPhone = '+' + phone;
+  if (registeredUsers[fullPhone]) {
+    showFieldError('signup-phone', isEn ? 'This number is already registered' : 'الرقم ده مسجل بالفعل');
+    return;
+  }
+  // حفظ الرقم مؤقتاً
+  localStorage.setItem('number', phone);
+  localStorage.setItem('signup_name', name);
+  localStorage.setItem('signup_pass', password);
+  if (selectedRole === 'captain') {
+    registeredUsers[fullPhone] = { name, pass: password, role: 'captain', status: 'pending' };
+    currentPhone = fullPhone;
+    loggedInUser = { name, role: 'captain', phone: fullPhone };
+    showCaptainVerify();
+    return;
+  }
+  try {
+    const response = await fetch('http://localhost:3000/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number: phone })
+    });
+    const data = await response.json();
+    console.log('OTP Response:', data);
+    if (data.success === true) {
+      registeredUsers[fullPhone] = { name, pass: password, role: 'customer' };
+      currentPhone = fullPhone;
+      loggedInUser = { name, role: 'customer', phone: fullPhone };
+      document.getElementById('auth-main').style.display = 'none';
+      document.getElementById('auth-otp').style.display = 'block';
+      document.getElementById('otp-phone-display').textContent = fullPhone;
+      resetOtpInputs();
+      startTimer();
+    } else {
+      alert(data.message || (isEn ? 'Failed to send OTP' : 'فشل إرسال الكود'));
+    }
+  } catch (error) {
+    console.error('OTP Error:', error);
+    alert(isEn ? 'Failed to connect to server' : 'فشل الاتصال بالسيرفر');
+  }
+}
+
+function showCaptainVerify() {
+  document.getElementById('auth-main').style.display = 'none';
+  document.getElementById('auth-captain-verify').style.display = 'block';
+  Object.keys(captainDocs).forEach(k => captainDocs[k] = false);
+  checkVerifyReady();
+}
+
+function markUploaded(boxId, docKey, input) {
+  if (!input.files || !input.files[0]) return;
+  const box = document.getElementById(boxId);
+  box.classList.add('uploaded');
+  box.querySelector('i').className = 'ti ti-circle-check';
+  box.querySelector('.upload-text').textContent = '✓ ' + input.files[0].name.slice(0,20);
+  captainDocs[boxId] = true;
+  checkVerifyReady();
+}
+
+function checkVerifyReady() {
+  const plate   = document.getElementById('plate-number').value.trim();
+  const allDocs = Object.values(captainDocs).every(v => v);
+  document.getElementById('verify-btn').disabled = !(allDocs && plate.length >= 3);
+}
+
+function submitCaptainVerify() {
+  const plate = document.getElementById('plate-number').value.trim();
+  if (registeredUsers[currentPhone]) { registeredUsers[currentPhone].plate = plate; registeredUsers[currentPhone].status = 'pending'; }
+  addCaptainToAdminList(loggedInUser.name, currentPhone, plate);
+  showPendingScreen();
+}
+
+function showPendingScreen() {
+  ['auth-main','auth-captain-verify','auth-otp','auth-success'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('auth-pending').style.display = 'block';
+}
+
+function addCaptainToAdminList(name, phone, plate) {
+  const list = document.getElementById('captain-verify-list');
+  const id   = 'capt-' + Date.now();
+  const card = document.createElement('div');
+  card.className = 'captain-review-card'; card.id = id;
+  const isEn = currentLang === 'en';
+  card.innerHTML = `<div class="captain-review-header"><div><div class="captain-review-name">${name}</div><div class="captain-review-meta">📱 ${phone} • ${isEn?'Plate':'رقم اللوحة'}: ${plate}</div></div><span class="status-badge s-pending">${isEn?'Pending':'قيد المراجعة'}</span></div><div class="captain-review-docs"><div class="doc-thumb"><i class="ti ti-id"></i>ID</div><div class="doc-thumb"><i class="ti ti-car"></i>Car</div><div class="doc-thumb"><i class="ti ti-license"></i>License</div><div class="doc-thumb"><i class="ti ti-file-certificate"></i>Reg.</div></div><div class="captain-review-actions"><button class="btn btn-success btn-sm" style="flex:1;" onclick="approveCapt('${id}')"><i class="ti ti-check"></i> ${isEn?'Approve':'موافقة'}</button><button class="btn btn-danger btn-sm" style="flex:1;" onclick="rejectCapt('${id}')"><i class="ti ti-x"></i> ${isEn?'Reject':'رفض'}</button></div>`;
+  list.prepend(card);
+  const cnt = document.getElementById('pending-captains-count');
+  cnt.textContent = parseInt(cnt.textContent) + 1;
+}
+
+function approveCapt(cardId) {
+  const card = document.getElementById(cardId); if (!card) return;
+  const txt = currentLang==='en'?'Approved':'تم الموافقة';
+  card.querySelector('.status-badge').textContent = txt;
+  card.querySelector('.status-badge').className   = 'status-badge s-accepted';
+  const tick = document.createElement('div');
+  tick.style.cssText = 'text-align:center;padding:8px;font-size:13px;font-weight:600;color:var(--accent-h);';
+  tick.innerHTML = '✓ ' + txt;
+  card.querySelector('.captain-review-actions').replaceWith(tick);
+  updatePendingCount(-1);
+}
+
+function rejectCapt(cardId) {
+  const card = document.getElementById(cardId); if (!card) return;
+  const txt = currentLang==='en'?'Rejected':'مرفوض';
+  card.querySelector('.status-badge').textContent = txt;
+  card.querySelector('.status-badge').className   = 'status-badge s-rejected';
+  const rej = document.createElement('div');
+  rej.style.cssText = 'text-align:center;padding:8px;font-size:13px;font-weight:600;color:var(--danger);';
+  rej.innerHTML = '✗ ' + txt;
+  card.querySelector('.captain-review-actions').replaceWith(rej);
+  updatePendingCount(-1);
+}
+
+function updatePendingCount(delta) {
+  const cnt = document.getElementById('pending-captains-count');
+  cnt.textContent = Math.max(0, parseInt(cnt.textContent) + delta);
+}
+
+function showOtpScreen() {
+  document.getElementById('auth-main').style.display    = 'none';
+  document.getElementById('auth-otp').style.display     = 'block';
+  document.getElementById('auth-success').style.display = 'none';
+  document.getElementById('otp-phone-display').textContent = currentPhone;
+  resetOtpInputs(); startTimer();
+}
+
+function goBackAuth() {
+  clearInterval(timerInterval);
+  ['auth-otp','auth-captain-verify','auth-pending'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('auth-main').style.display = 'block';
+}
+
+function resetOtpInputs() {
+  const inputs = document.querySelectorAll('.otp-single');
+  inputs.forEach(inp => { inp.value=''; inp.classList.remove('filled'); });
+  inputs.forEach((inp, i) => {
+    inp.addEventListener('input', function () {
+      this.value = this.value.replace(/\D/g,'').slice(-1);
+      this.classList.toggle('filled', this.value !== '');
+      if (this.value && i < inputs.length-1) inputs[i+1].focus();
+      document.getElementById('otp-btn').disabled = ![...inputs].every(x => x.value.length===1);
+    });
+    inp.addEventListener('keydown', function(e) { if (e.key==='Backspace' && !this.value && i>0) inputs[i-1].focus(); });
+  });
+  inputs[0].focus();
+  document.getElementById('otp-btn').disabled = true;
+}
+
+function startTimer() {
+  let secs = 60;
+  const countEl   = document.getElementById('countdown');
+  const timerEl   = document.getElementById('resend-timer');
+  const resendBtn = document.getElementById('resend-btn');
+  countEl.textContent = secs; timerEl.style.display = 'inline';
+  resendBtn.classList.remove('active');
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    secs--; countEl.textContent = secs;
+    if (secs <= 0) { clearInterval(timerInterval); timerEl.style.display='none'; resendBtn.classList.add('active'); }
+  }, 1000);
+}
+
+function resendOtp() { resetOtpInputs(); startTimer(); }
+
+function verifyOtp() {
+  clearInterval(timerInterval);
+  const isEn    = currentLang === 'en';
+  const isSignup = authTab === 'signup';
+  showSuccessScreen(
+    isSignup ? (isEn?'Account created!':'تم إنشاء الحساب بنجاح!') : (isEn?'Login successful!':'تم تسجيل الدخول!'),
+    isSignup ? (isEn?'Welcome, '+loggedInUser.name+'! Your account is ready.':'مرحباً '+loggedInUser.name+'، حسابك جاهز!') : (isEn?'Welcome back, '+loggedInUser.name:'مرحباً بعودتك '+loggedInUser.name)
+  );
+}
+
+function showSuccessScreen(title, sub) {
+  ['auth-main','auth-otp','auth-captain-verify'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('auth-success').style.display = 'block';
+  document.getElementById('success-title').textContent  = title;
+  document.getElementById('success-sub').textContent    = sub;
+}
+
+function enterApp() {
+  document.getElementById('auth-layer').style.display = 'none';
+  document.getElementById('app-layer').style.display  = 'block';
+  profileImgDataUrl = null;
+  userTrips = [];
+  setupAppHeader();
+  initMap();
+  document.getElementById('trip-date').valueAsDate = new Date();
+}
+
+function doLogout() {
+  closeProfile();
+  document.getElementById('app-layer').style.display  = 'none';
+  document.getElementById('auth-layer').style.display = 'flex';
+  ['auth-success','auth-otp','auth-captain-verify','auth-pending'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('auth-main').style.display = 'block';
+  ['login-phone','login-pass','signup-name','signup-phone','signup-pass'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  selectRole('customer'); checkLoginReady(); checkSignupReady(); switchAuthTab('login');
+  profileImgDataUrl = null; userTrips = [];
+}
+
+function setupAppHeader() {
+  const isEn = currentLang === 'en';
+  const roleLabels  = { customer: isEn?'Customer':'عميل', captain: isEn?'Captain':'كابتن', admin: isEn?'Admin':'أدمن' };
+  const roleClasses = { customer:'customer', captain:'captain', admin:'admin' };
+  const name = loggedInUser.name || (isEn?'User':'المستخدم');
+
+  document.getElementById('header-name').textContent   = name;
+  document.getElementById('header-avatar-letter').textContent = name.charAt(0).toUpperCase();
+  const badge = document.getElementById('header-role-badge');
+  badge.textContent = roleLabels[loggedInUser.role] || (isEn?'Customer':'عميل');
+  badge.className   = 'role-badge ' + (roleClasses[loggedInUser.role] || 'customer');
+
+  const role = loggedInUser.role;
+  document.querySelectorAll('.main-tab').forEach(t => {
+    const tabRole = t.id.replace('mtab-','');
+    t.style.display = role==='admin' ? 'flex' : (tabRole===role ? 'flex' : 'none');
+  });
+  switchMainTab(role==='admin' ? 'admin' : role);
+}
+
+function switchMainTab(tab) {
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.main-screen').forEach(s => s.classList.remove('active'));
+  const tabEl = document.getElementById('mtab-'+tab);
+  const scrEl = document.getElementById('mscreen-'+tab);
+  if (tabEl) tabEl.classList.add('active');
+  if (scrEl) scrEl.classList.add('active');
+  if (tab==='customer') setTimeout(resizeMap, 100);
+}
+
+function togglePassVis(id, eyeId) {
+  const inp = document.getElementById(id), eye = document.getElementById(eyeId);
+  if (inp.type==='password') { inp.type='text'; eye.className='ti ti-eye-off'; }
+  else { inp.type='password'; eye.className='ti ti-eye'; }
+}
+
+/* ══════════════════════════════════
+   PROFILE OVERLAY
+══════════════════════════════════ */
+function openProfile() {
+  const overlay = document.getElementById('profile-overlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  const name  = loggedInUser.name || (currentLang==='en'?'User':'المستخدم');
+  const phone = loggedInUser.phone || '—';
+  const isEn  = currentLang === 'en';
+  const roleLabels  = { customer: isEn?'Customer':'عميل', captain: isEn?'Captain':'كابتن', admin: isEn?'Admin':'أدمن' };
+  const roleClasses = { customer:'customer', captain:'captain', admin:'admin' };
+
+  document.getElementById('profile-avatar-letter-big').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('profile-name-display').textContent = name;
+  document.getElementById('profile-phone-display').textContent = phone;
+  document.getElementById('profile-name-input').value = name;
+
+  const pb = document.getElementById('profile-role-badge');
+  pb.textContent = roleLabels[loggedInUser.role] || (isEn?'Customer':'عميل');
+  pb.className   = 'role-badge ' + (roleClasses[loggedInUser.role] || 'customer');
+
+  const bigAv = document.querySelector('.profile-big-avatar');
+  if (profileImgDataUrl) {
+    let img = bigAv ? bigAv.querySelector('img') : null;
+    if (!img) {
+      img = document.createElement('img');
+      bigAv.insertBefore(img, bigAv.firstChild);
+    }
+    img.src = profileImgDataUrl;
+    document.getElementById('profile-avatar-letter-big').style.display = 'none';
+  }
+
+  const plbl = document.getElementById('profile-lang-label');
+  const psub = document.getElementById('profile-lang-sub');
+  const pbtn = document.getElementById('profile-lang-btn-text');
+  if (plbl) plbl.textContent = isEn ? 'English' : 'العربية';
+  if (psub) psub.textContent = isEn ? 'Tap to change language' : 'اضغط لتغيير اللغة';
+  if (pbtn) pbtn.textContent = isEn ? 'عربي' : 'English';
+
+  renderProfileTrips();
+}
+
+function closeProfile() {
+  document.getElementById('profile-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('profile-overlay')) closeProfile();
+}
+
+function handleProfileImage(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    profileImgDataUrl = ev.target.result;
+    const bigAv = document.querySelector('.profile-big-avatar');
+    let img = bigAv.querySelector('img');
+    if (!img) {
+      img = document.createElement('img');
+      bigAv.insertBefore(img, bigAv.firstChild);
+    }
+    img.src = profileImgDataUrl;
+    document.getElementById('profile-avatar-letter-big').style.display = 'none';
+    const headerWrap = document.getElementById('header-avatar-wrap');
+    let hImg = headerWrap.querySelector('img');
+    if (!hImg) {
+      hImg = document.createElement('img');
+      headerWrap.appendChild(hImg);
+    }
+    hImg.src = profileImgDataUrl;
+    document.getElementById('header-avatar-letter').style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function saveName() {
+  const newName = document.getElementById('profile-name-input').value.trim();
+  if (!newName) return;
+  loggedInUser.name = newName;
+  document.getElementById('profile-name-display').textContent = newName;
+  document.getElementById('header-name').textContent = newName;
+  document.getElementById('profile-avatar-letter-big').textContent = newName.charAt(0).toUpperCase();
+  if (!profileImgDataUrl) {
+    document.getElementById('header-avatar-letter').textContent = newName.charAt(0).toUpperCase();
+  }
+  const btn = document.querySelector('.profile-name-save-btn');
+  const orig = btn.textContent;
+  btn.textContent = '✓';
+  btn.style.background = 'var(--success)';
+  setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
+}
+
+function renderProfileTrips() {
+  const container = document.getElementById('profile-trips-list');
+  const isEn = currentLang === 'en';
+
+  const demoTrips = [
+    { from:'الشيخ زايد', to:'التجمع الخامس', time: isEn?'Today 8:00 PM':'اليوم 8:00 م', pass:3, price:100, status:'new' },
+    { from:'المعادي', to:'مدينة نصر', time: isEn?'Yesterday 2:00 PM':'أمس 2:00 م', pass:1, price:60, status:'done' },
+  ];
+  const allTrips = [...userTrips.slice().reverse(), ...demoTrips];
+
+  if (!allTrips.length) {
+    container.innerHTML = `<div style="text-align:center;padding:16px;font-size:13px;color:var(--hint);">${isEn?'No trips yet':'لا يوجد رحلات بعد'}</div>`;
+    return;
+  }
+
+  const statusMap = {
+    new:      { cls:'new',      label: isEn?'New':'جديد',       icon:'ti-clock', iconColor:'#185FA5' },
+    done:     { cls:'done',     label: isEn?'Done':'منتهية',    icon:'ti-check', iconColor:'#5F5E5A' },
+    accepted: { cls:'accepted', label: isEn?'Accepted':'مقبولة', icon:'ti-route', iconColor:'#3B6D11' },
+  };
+
+  container.innerHTML = allTrips.map(t => {
+    const s = statusMap[t.status] || statusMap.done;
+    return `<div class="trip-history-item">
+      <div class="trip-history-icon ${s.cls}" style="background:${s.cls==='new'?'#E6F1FB':s.cls==='accepted'?'#EAF3DE':'#f1f0eb'};">
+        <i class="ti ${s.icon}" style="font-size:16px;color:${s.iconColor};"></i>
+      </div>
+      <div class="trip-history-info">
+        <div class="trip-history-route">${t.from} → ${t.to}</div>
+        <div class="trip-history-meta">${t.time} • ${t.pass} ${isEn?'person(s)':'شخص'}</div>
+      </div>
+      <div style="text-align:left;">
+        <div class="trip-history-price">~${t.price} ${isEn?'EGP':'ج'}</div>
+        <span class="status-badge s-${s.cls}" style="font-size:10px;">${s.label}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════
+   LEAFLET MAP
+══════════════════════════════════ */
+let map, fromMarker, toMarker, routeLine, myLocMarker, myLocCircle;
+let mapClickState = 0;
+
+function getFromIcon() {
+  return L.divIcon({ className:'', html:'<div style="background:#1D9E75;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);"></div>', iconSize:[18,18], iconAnchor:[9,9] });
+}
+function getToIcon() {
+  return L.divIcon({ className:'', html:'<div style="background:#D85A30;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);"></div>', iconSize:[18,18], iconAnchor:[9,9] });
+}
+function getMyIcon() {
+  return L.divIcon({ className:'', html:`<div style="position:relative;width:22px;height:22px;"><div style="position:absolute;inset:0;background:#1a73e8;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div><div style="position:absolute;inset:-8px;background:rgba(26,115,232,0.18);border-radius:50%;animation:pulse 1.8s ease-out infinite;"></div></div>`, iconSize:[22,22], iconAnchor:[11,11] });
+}
+
+function initMap() {
+  if (map) { resizeMap(); return; }
+  map = L.map('leaflet-map', { zoomControl:true }).setView([30.0444, 31.2357], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap', maxZoom:19 }).addTo(map);
+  map.on('click', function(e) {
+    const lat = e.latlng.lat.toFixed(5), lng = e.latlng.lng.toFixed(5);
+    const coordLabel = lat + ', ' + lng;
+    if (mapClickState === 0) {
+      if (fromMarker) map.removeLayer(fromMarker);
+      fromMarker = L.marker(e.latlng, { icon:getFromIcon() }).addTo(map).bindPopup('🟢 '+(currentLang==='en'?'Start point':'نقطة الانطلاق')).openPopup();
+      document.getElementById('ms-from').textContent = coordLabel;
+      if (!document.getElementById('from-input').value) document.getElementById('from-input').value = coordLabel;
+      document.getElementById('from-clear').classList.add('show');
+      mapClickState = 1;
+    } else {
+      if (toMarker) map.removeLayer(toMarker);
+      toMarker = L.marker(e.latlng, { icon:getToIcon() }).addTo(map).bindPopup('🔴 '+(currentLang==='en'?'Destination':'الوجهة')).openPopup();
+      document.getElementById('ms-to').textContent = coordLabel;
+      if (!document.getElementById('to-input').value) document.getElementById('to-input').value = coordLabel;
+      document.getElementById('to-clear').classList.add('show');
+      mapClickState = 0; drawRoute();
+    }
+  });
+  if (!document.getElementById('pulse-style')) {
+    const s = document.createElement('style'); s.id='pulse-style';
+    s.textContent = '@keyframes pulse{0%{transform:scale(0.6);opacity:.8}100%{transform:scale(2.2);opacity:0}}';
+    document.head.appendChild(s);
+  }
+}
+
+function locateMe() {
+  if (!navigator.geolocation) { showLocateError(currentLang==='en'?'Browser does not support geolocation':'متصفحك لا يدعم تحديد الموقع'); return; }
+  const spinner = document.getElementById('locate-spinner');
+  const btn     = document.getElementById('locate-btn');
+  spinner.style.display='flex'; btn.disabled=true; btn.style.opacity='0.6';
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      spinner.style.display='none'; btn.disabled=false; btn.style.opacity='1';
+      const lat=pos.coords.latitude, lng=pos.coords.longitude, acc=pos.coords.accuracy;
+      const latlng = L.latLng(lat,lng);
+      if (myLocMarker) map.removeLayer(myLocMarker);
+      if (myLocCircle) map.removeLayer(myLocCircle);
+      myLocCircle = L.circle(latlng,{radius:acc,color:'#1a73e8',fillColor:'#1a73e8',fillOpacity:.08,weight:1.5,opacity:.4}).addTo(map);
+      myLocMarker = L.marker(latlng,{icon:getMyIcon()}).addTo(map).bindPopup('📍 '+(currentLang==='en'?'My location':'موقعي الحالي')).openPopup();
+      map.setView(latlng,15,{animate:true});
+      if (fromMarker) map.removeLayer(fromMarker);
+      fromMarker = L.marker(latlng,{icon:getFromIcon()}).addTo(map);
+      document.getElementById('ms-from').textContent = lat.toFixed(5)+', '+lng.toFixed(5);
+      document.getElementById('from-input').value = currentLang==='en'?'My current location':'موقعي الحالي';
+      document.getElementById('from-clear').classList.add('show');
+      mapClickState = 1;
+    },
+    function(err) {
+      spinner.style.display='none'; btn.disabled=false; btn.style.opacity='1';
+      const msgs={1:currentLang==='en'?'Location permission denied':'تم رفض إذن الموقع',2:currentLang==='en'?'Unable to determine location':'تعذّر تحديد الموقع',3:currentLang==='en'?'Location request timed out':'انتهت مهلة التحديد'};
+      showLocateError(msgs[err.code]||(currentLang==='en'?'Location error':'خطأ في تحديد الموقع'));
+    },
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+  );
+}
+
+function showLocateError(msg) {
+  const el = document.createElement('div');
+  el.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#D85A30;color:white;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;font-family:Cairo,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;';
+  el.innerHTML='⚠️ '+msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),4000);
+}
+
+function drawRoute() {
+  if (!fromMarker || !toMarker) return;
+  if (routeLine) map.removeLayer(routeLine);
+  routeLine = L.polyline([fromMarker.getLatLng(),toMarker.getLatLng()],{color:'#1D9E75',weight:4,dashArray:'10,7',opacity:.9}).addTo(map);
+  map.fitBounds(routeLine.getBounds(),{padding:[40,40]});
+}
+function resizeMap() { if (map) map.invalidateSize(); }
+
+/* ══════════════════════════════════
+   BOOKING
+══════════════════════════════════ */
+let passengers   = 2;
+let selectedTime = 'غير محدد';
+let isOnline     = false;
+
+function changePass(delta) {
+  passengers = Math.max(1, Math.min(8, passengers+delta));
+  document.getElementById('pass-count').textContent = passengers;
+}
+
+function confirmBooking() {
+  const isEn  = currentLang === 'en';
+  const from  = document.getElementById('from-input').value || (isEn?'Not set':'غير محدد');
+  const to    = document.getElementById('to-input').value   || (isEn?'Not set':'غير محددة');
+  const date  = document.getElementById('trip-date').value  || (isEn?'Today':'اليوم');
+  const price = (passengers * 20 + 40);
+
+  document.getElementById('conf-from').textContent  = from;
+  document.getElementById('conf-to').textContent    = to;
+  document.getElementById('conf-time').textContent  = date + ' • ' + selectedTime;
+  document.getElementById('conf-pass').textContent  = passengers + (isEn?' person(s)':' شخص');
+  document.getElementById('conf-price').textContent = '~' + price + (isEn?' EGP':' جنيه');
+  document.getElementById('booking-confirm-box').classList.add('show');
+
+  userTrips.push({ from, to, time: date+' '+selectedTime, pass: passengers, price, status:'new' });
+
+  setTimeout(() => {
+    document.getElementById('booking-toast').style.display = 'block';
+    const adminCount = document.getElementById('admin-bookings');
+    adminCount.textContent = parseInt(adminCount.textContent) + 1;
+    const adminTrips = document.getElementById('admin-trips');
+    const newTrip = document.createElement('div');
+    newTrip.className = 'trip-card';
+    newTrip.innerHTML = `<div style="flex:1;"><div class="trip-route">${from} → ${to}</div><div class="trip-meta">🕐 ${date} ${selectedTime} • ${passengers} ${isEn?'person(s)':'شخص'} • ${loggedInUser.name||(isEn?'Customer':'عميل')}</div></div><span class="status-badge s-new">${isEn?'New':'جديد'}</span>`;
+    adminTrips.prepend(newTrip);
+    if (isOnline) {
+      const notif = document.getElementById('new-trip-notif');
+      document.getElementById('notif-details').textContent = (isEn?'From ':'من ')+from.slice(0,15)+(isEn?' to ':' إلى ')+to.slice(0,15)+' • '+selectedTime+' • '+passengers+(isEn?' persons':' أشخاص');
+      notif.style.display='flex';
+    }
+  }, 400);
+}
+
+/* ══════════════════════════════════
+   CAPTAIN
+══════════════════════════════════ */
+function toggleOnline() {
+  const isEn = currentLang === 'en';
+  isOnline = !isOnline;
+  document.getElementById('online-toggle-sw').classList.toggle('on', isOnline);
+  document.getElementById('online-label').textContent = isOnline ? (isEn?"You're online":'أنت أونلاين') : (isEn?"You're offline":'أنت أوفلاين');
+  if (!isOnline) document.getElementById('new-trip-notif').style.display='none';
+}
+
+function acceptTrip() {
+  document.getElementById('new-trip-notif').style.display = 'none';
+  const parts = document.getElementById('notif-details').textContent.split(' • ');
+  document.getElementById('active-route').textContent = parts[0] || 'المعادي → مدينة نصر';
+  document.getElementById('active-time').textContent  = parts[1] || '8:00 م';
+  document.getElementById('active-pass').textContent  = parts[2] || '3 أشخاص';
+  document.getElementById('active-trip').style.display = 'block';
+}
+
+function completeTrip() {
+  const isEn = currentLang === 'en';
+  const trip = document.getElementById('active-trip');
+  trip.querySelector('.status-badge').textContent = isEn?'Done':'منتهية';
+  trip.querySelector('.status-badge').className   = 'status-badge s-done';
+  trip.querySelector('.captain-trip-header').style.opacity = '.7';
+  trip.querySelectorAll('button').forEach(b => b.style.display='none');
+  const price = parseInt((document.getElementById('active-price').textContent||'85').replace(/\D/g,''))||85;
+  document.getElementById('capt-earn').textContent  = parseInt(document.getElementById('capt-earn').textContent)+price;
+  document.getElementById('capt-trips').textContent = parseInt(document.getElementById('capt-trips').textContent)+1;
+}
+
+/* ── Helpers ── */
+function roleLabel(r) {
+  const isEn = currentLang === 'en';
+  return {customer:isEn?'Customer':'عميل',captain:isEn?'Captain':'كابتن',admin:isEn?'Admin':'أدمن'}[r]||r;
+}
+
+function showFieldError(fieldId, msg) {
+  const el = document.getElementById(fieldId);
+  el.style.borderColor='#D85A30'; el.style.boxShadow='0 0 0 2px rgba(216,90,48,.15)';
+  let err = el.parentElement.querySelector('.field-err');
+  if (!err) { err=document.createElement('div'); err.className='field-err'; el.parentElement.appendChild(err); }
+  err.textContent=msg; err.style.cssText='color:#D85A30;font-size:12px;margin-top:4px;';
+  setTimeout(()=>{ el.style.borderColor=''; el.style.boxShadow=''; if(err) err.remove(); },3000);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key==='Escape') closeProfile();
+});
+
+/* ══════════════════════════════════
+   DARK MODE
+══════════════════════════════════ */
+function toggleDarkMode() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  updateDarkIcons(isDark);
+}
+
+function updateDarkIcons(isDark) {
+  const icon  = document.getElementById('dark-icon');
+  const icon2 = document.getElementById('auth-dark-icon');
+  const ico   = isDark ? 'ti-sun' : 'ti-moon';
+  if (icon)  { icon.className  = 'ti ' + ico; }
+  if (icon2) { icon2.className = 'ti ' + ico; }
+}
+
+// Apply saved theme on load
+(function() {
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === 'dark' || (!saved && prefersDark)) {
+    document.documentElement.classList.add('dark');
+    // Icons update after DOM ready
+    document.addEventListener('DOMContentLoaded', function() { updateDarkIcons(true); });
+  }
+})();
+</script>
+</body>
+</html>
